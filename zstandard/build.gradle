@@ -1,0 +1,61 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    namespace 'ru.ostrov.zstandard'
+    ndkVersion '25.2.9519653'
+    compileSdk 33
+
+    defaultConfig {
+        minSdk 19
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags '-std=c++17'
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            debuggable false
+            jniDebuggable false
+            renderscriptDebuggable false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.22.1'
+        }
+    }
+
+    buildFeatures {
+        prefabPublishing true
+    }
+
+    prefab {
+        zstandard {
+            headers "src/main/cpp/include"
+        }
+    }
+
+    packagingOptions {
+        exclude("**/libzstandard.so")
+        exclude("**/libc++_shared.so")
+    }
+}
+
