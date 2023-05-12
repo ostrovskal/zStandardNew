@@ -27,6 +27,7 @@ add_library(zstandard STATIC
         zJniHelper.cpp
         zInterpolator.cpp
         gl3stub.cpp
+        zStringUTF8.cpp
 )
 
 target_include_directories(zstandard PUBLIC include)

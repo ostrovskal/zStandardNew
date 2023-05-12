@@ -61,12 +61,12 @@ inline char *z_strrev(char *str) {
     return str;
 }
 
-class zStringUTF8 {
+class _zStringUTF8 {
 public:
     // конструктор
-    zStringUTF8(cstr s, size_t _l = 0);
+    _zStringUTF8(cstr s, size_t _l = 0);
     // деструктор
-    ~zStringUTF8() { delete ptr; }
+    ~_zStringUTF8() { delete ptr; }
     // приведение типа
     operator cstr() const { return str(); }
     // вернуть строку
@@ -86,11 +86,11 @@ public:
     // конструкторы
     zString() { init(); }
     zString(zString&& str) noexcept { _str = str._str; str.init(); }
+    zString(const zString& str) { init(); *this = str; }
     zString(cstr cws, int len = -1);
     zString(char* ws, int len = -1) : zString((cstr)ws, len) {}
     zString(u8* b, int len = -1) : zString((cstr)b, len) {}
-    zString(const zString& str) { init(); *this = str; }
-    zString(const zStringUTF8& str) { init(); *this = str; }
+//    zString(const zStringUTF8& str) { init(); *this = str; }
     zString(char ws, i32 rep);
     zString(i32 value, u32 offs, bool hex, u32 radix = 0);
     // деструктор
@@ -110,7 +110,7 @@ public:
     friend bool operator != (cstr wcs, const zString& str) { return !(operator == (wcs, str)); }
     // операторы присваивания
     const zString& operator = (const zString& str) { return make(str, str.length()); }
-    const zString& operator = (const zStringUTF8& str) { return make(str.str(), (int)str.length()); }
+  //  const zString& operator = (const zStringUTF8& str) { return make(str.str(), (int)str.length()); }
     const zString& operator = (zString&& str) noexcept { empty(); _str = str._str; str.init(); return *this; }
     const zString& operator = (char ws) { return make((cstr)&ws, 1); }
     const zString& operator = (cstr wcs) { return make(wcs, z_strlen(wcs)); }

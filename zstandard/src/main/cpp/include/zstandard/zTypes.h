@@ -120,6 +120,10 @@ public:
 	T clamp(const T& p) { return (p < w ? w : p > h ? h : p); }
 	bool isEmpty() const { return w < 1 || h < 1; }
     const T& operator [](int index) const { return buf[index]; }
+	zSize<T> operator + (const zSize<T>& s) { return zSize<T>(w + s.w, h + s.h); }
+	zSize<T> operator + (const T& s) { return zSize<T>(w + s, h + s); }
+	zSize<T> operator - (const zSize<T>& s) { return zSize<T>(w - s.w, h - s.h); }
+	zSize<T> operator - (const T& s) { return zSize<T>(w - s, h - s); }
 	const zSize<T>& operator = (const zSize<T>& s) { w = s.w; h = s.h; return *this; }
 	const zSize<T>& operator += (const zSize<T>& s) { w += s.w; h += s.h; return *this; }
 	const zSize<T>& operator -= (const zSize<T>& s) { w -= s.w; h -= s.h; return *this; }

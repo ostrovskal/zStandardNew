@@ -81,6 +81,77 @@ struct HEADER_TGA {
 
 #include "zTypes.h"
 
+// вернуть длину символа
+inline i32 z_charLengthUTF8(cstr _str) {
+    static u8 length[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4 };
+    return length[(((*_str) & 0b11110000) >> 4)];
+}
+
+// вернуть символ
+inline int z_charUTF8(cstr _str, i32* length = nullptr) {
+    static u32 mask[] = { 0, 0xff, 0xffff, 0xffffff, 0xffffffff };
+    i32 l(z_charLengthUTF8(_str)); if(length) *length = l;
+    return (*(int*)_str & mask[l]);
+}
+
+// определение пустой строки
+inline bool z_isUTF8(cstr _str) {
+    return _str && z_charUTF8(_str);
+}
+
+// вернуть адрес в строке по индексу
+inline cstr z_ptrUTF8(cstr _str, i32 idx) {
+    while(idx-- > 0 && z_isUTF8(_str)) _str += z_charLengthUTF8(_str);
+    return _str;
+}
+
+// безопасное определение размера строки
+inline i32 z_sizeUTF8(cstr _str, i32 count = INT_MAX) {
+    return (i32)(z_ptrUTF8(_str, count) - _str);
+}
+
+// безопасное определение количества символов в строке
+inline i32 z_countUTF8(cstr _str) {
+    i32 count(0);
+    while(z_isUTF8(_str)) _str += z_charLengthUTF8(_str), count++;
+    return count;
+}
+
+// сравнение строк
+inline int z_strcmpUTF8(cstr _str1, cstr _str2) {
+    auto size1(z_sizeUTF8(_str1)), size2(z_sizeUTF8(_str2));
+    if(size1 == size2) return strncmp(_str1, _str2, size1);
+    if(size1 > size2) return 1;
+    return -1;
+}
+
+// сравнение строк
+inline int z_strncmpUTF8(cstr _str1, cstr _str2, i32 _size) {
+    i32 l1, l2; int ch;
+    if(_size == 0) return 0;
+    // берем символы из строк и сравниваем их
+    while((ch = z_charUTF8(_str1, &l1)) == z_charUTF8(_str2, &l2)) {
+        // проверка на размеры
+        if(l1 != l2) break;
+        // проверка на конец строки
+        if(--_size <= 0 || ch == 0) return 0;
+        // приращение строк
+        _str1 += l1; _str2 += l2;
+    }
+    return 1;
+}
+
+// поиск строки в строке
+inline int z_strstrUTF8(cstr _str1, cstr _str2) {
+    cstr ret(nullptr); int idx(0);
+    if(z_isUTF8(_str1)) ret = strstr(_str1, _str2);
+    while(_str1 < ret) _str1 += z_charLengthUTF8(_str1), idx++;
+    return ret ? idx : -1;
+}
+
+int z_decodeUTF8(int ch);
+int z_encodeUTF8(u8 ch);
+
 // минимум
 template <typename T> T z_min(const T& v1, const T& v2) {
     return v1 <= v2 ? v1 : v2;
