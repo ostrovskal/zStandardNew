@@ -106,8 +106,25 @@ zString zFile::readString(int pos, int mode) const {
     return tmp;
 }
 
-zArray<zString> zFile::strings() const {
-    zArray<zString> arr; zString str;
+zStringUTF8 zFile::readStringUTF8(int pos, int mode) const {
+    static char stmp[257];
+    zStringUTF8 tmp;
+    seek(pos, mode);
+    if(hf > 0) {
+        char ch; int idx(0);
+        while(readf(hf, &ch, 1) == 1) {
+            if(ch == '\r') continue;
+            if(ch == '\n') break;
+            stmp[idx++] = ch;
+            if(idx > 255) { stmp[idx] = 0; tmp += stmp; idx = 0; }
+        }
+        if(idx) { stmp[idx] = 0; tmp += stmp; }
+    }
+    return tmp;
+}
+
+zArray<zStringUTF8> zFile::strings() const {
+    zArray<zStringUTF8> arr; zStringUTF8 str;
     while((str = readString()).isNotEmpty()) arr += str;
     return arr;
 }
@@ -127,6 +144,19 @@ bool zFile::writeString(const zString& s, bool clr) const {
     bool ret(false);
     if(hf > 0) {
         auto l(s.length());
+        if((ret = (writef(hf, s.str(), l) == l))) {
+            l--;
+            if(clr && s[l] != '\r' && s[l] != '\n')
+                ret = (writef(hf, "\n", 1) == 1);
+        }
+    }
+    return ret;
+}
+
+bool zFile::writeStringUTF8(const zStringUTF8& s, bool clr) const {
+    bool ret(false);
+    if(hf > 0) {
+        auto l(z_sizeUTF8(s.str()));
         if((ret = (writef(hf, s.str(), l) == l))) {
             l--;
             if(clr && s[l] != '\r' && s[l] != '\n')

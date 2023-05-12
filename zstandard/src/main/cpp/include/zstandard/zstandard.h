@@ -431,6 +431,7 @@ struct HZIP {
 #include "zRand.h"
 #include "zArray.h"
 #include "zString.h"
+#include "zStringUTF8.h"
 #include "zFile.h"
 #include "zJSON.h"
 #include "zXml.h"

@@ -6,7 +6,7 @@ zJSON::Node zJSON::dummy;
 static char* brakket((char*)"()");
 
 bool zJSON::init(u8* ptr, int size) {
-	jcur = ((char*)z_utfToAscii(ptr, size));
+	jcur = (char*)ptr;
 	jend = (jcur + z_strlen(jcur));
 	z_skip_spc(&jcur, line);
 	if(*jcur == '{' && parse(nullptr, _object, 1)) error = 0;
@@ -117,8 +117,8 @@ zJSON::Node* zJSON::addNode(cstr key, cstr val, JType jt, Node* node) {
 	return new Node(n, key, val, jt);
 }
 
-zString zJSON::save() {
-	zString ret;
+zStringUTF8 zJSON::save() {
+	zStringUTF8 ret;
 	return ret;
 }
 

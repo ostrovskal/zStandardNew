@@ -19,11 +19,11 @@ public:
         // вернуть булево
         bool boolean() const { return val == "true"; }
         // вернуть строку
-        const zString& string() const { return val; }
+        const zStringUTF8& string() const { return val; }
         // ключь
-        zString key{ "" };
+        zStringUTF8 key{ "" };
         // значение
-        zString val{ "" };
+        zStringUTF8 val{ "" };
         // тип
         JType tp{ _str };
         // массив дочерних
@@ -37,7 +37,7 @@ public:
     // инициализация
     bool init(u8* ptr, int size);
     // сформировать строку
-    zString save();
+    zStringUTF8 save();
     // вернуть корень
     const Node* getRoot() const { return root; }
     // вернуть узел по индексу

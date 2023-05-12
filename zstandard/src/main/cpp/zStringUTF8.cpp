@@ -7,26 +7,27 @@
 
 static cstr hex("0123456789ABCDEF-");
 
-char* zStringUTF8::alloc(i32 _count, bool is_copy) {
-    if(_count) {
-        auto _old(buffer()); auto size((_count + 1) * 4);
-        if(size > _str_buffer.size) {
+char* zStringUTF8::alloc(i32 _count, i32 _size, bool is_copy) {
+    auto _old(buffer());
+    if(_size) {
+        auto size(_size + 4);
+        if(size > _str_buffer.size_buf) {
             // выделим память под новый буфер
-            auto _new(new char[size]); memset(_new, 0, size);
+            auto _new(new char[size]);
             // скопировать старый, если необходимо
-            if(is_copy && isNotEmpty()) memcpy(_new, _old, _str_buffer.size);
+            if(is_copy && isNotEmpty()) memcpy(_new, _old, _str_buffer.length);
             // стереть старый
             empty();
             // инициализируем новый
-            _str_buffer.size= size;
-            _str_buffer.ptr	= _new;
-            _old            = _new;
+            _str_buffer.size_buf= size;
+            _str_buffer.ptr	    = _new;
+            _old                = _new;
         }
         _str_buffer.count   = _count;
-        return _old;
-    }
-    empty();
-    return _str_buffer.str;
+        _str_buffer.length  = _size;
+        _old[_size]         = 0;
+    } else { empty(); }
+    return _old;
 }
 
 zStringUTF8::zStringUTF8(i32 value, u32 offs, bool _hex, u32 radix) {
@@ -39,35 +40,36 @@ zStringUTF8::zStringUTF8(cstr _str, i32 _count) {
 }
 
 zStringUTF8::zStringUTF8(int ch, i32 _count) {
-    init(); auto _str(alloc(_count, false));
-    auto l(z_charLengthUTF8((cstr)&ch));
-    while(_count-- > 0) *(int*)_str = ch, _str += l;
+    auto l(z_charLengthUTF8((cstr)&ch)); init();
+    auto _str(alloc(_count, l * _count, false));
+    while(_count-- > 0) memcpy(_str, &ch, l), _str += l;
 }
 
 const zStringUTF8& zStringUTF8::add(cstr _str, i32 _count) {
-    auto size(z_sizeUTF8(_str, (i32)_count));
-    alloc(length() + _count, true);
-    memcpy((void*)z_ptrUTF8(str(), (i32)_count), _str, size);
-    buffer()[size] = 0; return *this;
+    auto _size(z_sizeUTF8(_str, _count));
+    alloc(count() + _count, _size, true);
+    memcpy(ptr(_count), _str, _size);
+    return *this;
 }
 
 const zStringUTF8& zStringUTF8::make(cstr _str, i32 _count) {
-    auto size(z_sizeUTF8(_str, _count)); memcpy(alloc(_count, false), _str, size);
-    buffer()[size] = 0; return *this;
+    auto _size(z_sizeUTF8(_str, _count));
+    memcpy(alloc(_count, _size, false), _str, _size);
+    return *this;
 }
 
 zStringUTF8 zStringUTF8::substr(i32 idx, i32 _count) const {
-    auto count(length());
-    if(idx <= count) {
-        if(_count < 0) _count = count;
-        if((idx + _count) > count) _count = (count - idx);
+    auto count1(count());
+    if(idx <= count1) {
+        if(_count < 0) _count = count1;
+        if((idx + _count) > count1) _count = (count1 - idx);
     } else idx = 0, _count = 0;
-    return { z_ptrUTF8(str(), idx), _count };
+    return { ptr(idx), _count };
 }
 
 zStringUTF8 zStringUTF8::_after(cstr str, i32 _count, cstr no, bool last) const {
     auto idx(last ? _indexOfLast(str, 0, _count) : _indexOf(str, 0));
-    return (idx != -1 ? substr(idx + (i32)_count) : zStringUTF8(no));
+    return (idx != -1 ? substr(idx + _count) : zStringUTF8(no));
 }
 
 zStringUTF8 zStringUTF8::_before(cstr str, i32 _count, cstr no, bool last) const {
@@ -90,30 +92,29 @@ int zStringUTF8::_indexOfLast(cstr str, i32 idx, i32 _count) const {
 }
 
 const zStringUTF8& zStringUTF8::reverse() {
-    auto size(z_sizeUTF8(str())), count(length());
-    auto buf(new char[size + 1]), _buf(buf), _str(buffer()); buf[size] = 0;
-    while(count-- > 0) {
-        auto ptr(z_ptrUTF8(_str, count));
-        auto sz(z_charLengthUTF8(ptr));
-        memcpy(_buf, ptr, sz); _buf += sz;
+    auto size(z_sizeUTF8(str())), _count(count());
+    auto buf(std::make_unique<char>(size + 1)); auto _buf(buf.get());
+    while(_count-- > 0) {
+        auto _ptr(ptr(_count)); auto sz(charSize(_ptr));
+        memcpy(_buf, _ptr, sz); _buf += sz;
     }
-    *this = buf; delete [] buf;
+    memcpy(buffer(), buf.get(), _str_buffer.length);
     return *this;
 }
 
-void zStringUTF8::set(i32 idx, cstr _str) const {
-    auto ptr(z_ptrUTF8(str(), idx));
-    auto _size1(z_charLengthUTF8(ptr)), _size2(z_sizeUTF8(_str));
-    memmove((char*)ptr + _size2, ptr + _size1, _str_buffer.size - _size1);
-    memcpy((char*)ptr, _str, _size2);
+void zStringUTF8::set(i32 idx, cstr _str) {
+    auto _ptr(ptr(idx)); auto _size1(charSize(_ptr)), _size2(z_sizeUTF8(_str));
+    memmove(_ptr + _size2, _ptr + _size1, sizeCopy(_ptr + _size1));
+    memcpy(_ptr, _str, _size2);
+    _str_buffer.length += _size2 - _size1;
+    _str_buffer.count  = z_countUTF8(str());
 }
 
 zStringUTF8 zStringUTF8::add(cstr str1, i32 _count1, cstr str2, i32 _count2) {
     auto size1(z_sizeUTF8(str1, _count1)), size2(z_sizeUTF8(str2, _count2));
-    auto ptr(new char[size1 + size2 + 1]); ptr[size1 + size2] = 0;
-    memcpy((char*)memcpy(ptr, str1, size1) + size1, str2, size2);
-    zStringUTF8 ret(ptr); delete [] ptr;
-    return ret;
+    auto ptr(std::make_unique<char>(size1 + size2 + 1)); ptr.get()[size1 + size2] = 0;
+    memcpy((char*)memcpy(ptr.get(), str1, size1) + size1, str2, size2);
+    return { ptr.get() };
 }
 
 const zStringUTF8& zStringUTF8::replace(cstr _old, cstr _new) {
@@ -122,7 +123,7 @@ const zStringUTF8& zStringUTF8::replace(cstr _old, cstr _new) {
     // подсчитать новый размер
     while((_buf = strstr(_buf, _old))) count++, _buf += sizeOld;
     auto size(z_sizeUTF8(str()) - (sizeOld - sizeNew) * count);
-    auto _tmp(new char[size + 1]), tmp(_tmp); tmp[size] = 0;
+    auto tmp(std::make_unique<char>(size + 1)); auto _tmp(tmp.get()); _tmp[size] = 0;
     // непосредственно замена
     while((_buf = strstr(_str, _old))) {
         // копируем разницу
@@ -133,91 +134,84 @@ const zStringUTF8& zStringUTF8::replace(cstr _old, cstr _new) {
         // сдвигаем указатель
         _str = _buf + sizeOld;
     }
-    memcpy(_tmp, _str, size - (_tmp - tmp));
-    *this = tmp; delete [] tmp;
+    memcpy(_tmp, _str, size - (_tmp - tmp.get()));
+    alloc(z_countUTF8(tmp.get()), size, false);
+    memcpy(buffer(), tmp.get(), size);
     return *this;
 }
 
 const zStringUTF8& zStringUTF8::remove(cstr _str) {
-    auto _count(z_countUTF8(_str)), _size(z_sizeUTF8(_str)); auto f(buffer()), _f(f);
+    auto _count(z_countUTF8(_str)), _size(z_sizeUTF8(_str)); auto f(buffer());
     while((f = strstr(f, _str))) {
         _str_buffer.count -= _count;
-        memcpy(f, f + _size, _str_buffer.size - (i32)((f + _size) - _f));
+        _str_buffer.length -= _size;
+        memcpy(f, f + _size, sizeCopy(f + _size));
     }
     return *this;
 }
 
 const zStringUTF8& zStringUTF8::remove(i32 idx, i32 _count) {
-    auto count(length());
-    if(idx < count) {
-        if(_count < 0) _count = count;
-        if((idx + _count) > count) _count = (count - idx);
-        auto ptr((char*)z_ptrUTF8(str(), idx + _count));
-        memcpy((char*)z_ptrUTF8(str(), idx), ptr, _str_buffer.size - (i32)(ptr - str()));
+    auto count1(count());
+    if(idx < count1) {
+        if(_count < 0) _count = count1;
+        if((idx + _count) > count1) _count = (count1 - idx);
+        auto _ptr(ptr(idx)); auto _size(z_sizeUTF8(_ptr, _count));
+        memcpy(_ptr, _ptr + _size, sizeCopy(_ptr + _size));
         _str_buffer.count -= _count;
+        _str_buffer.length -= _size;
     }
     return *this;
 }
 
 const zStringUTF8& zStringUTF8::insert(i32 idx, cstr _str) {
-    auto count(length()), _size(z_sizeUTF8(_str));
-    if(idx > count) idx = count;
-    if(idx <= count && alloc(count + z_countUTF8(_str), true)) {
-        auto _buf((char*)z_ptrUTF8(str(), idx));
-        memmove(_buf + _size, _buf, _str_buffer.size - (i32)(_buf - str()));
+    auto _count(count()), _size(z_sizeUTF8(_str));
+    if(idx > _count) idx = _count;
+    if(idx <= _count && alloc(_count + z_countUTF8(_str), size() + _size, true)) {
+        auto _buf(ptr(idx));
+        memmove(_buf + _size, _buf, sizeCopy(_buf + _size));
         memcpy(_buf, _str, _size);
     }
     return *this;
 }
 
-static cstr is_chars(cstr str, cstr wcs, i32 count) {
-    i32 l;
-    auto ch1(z_charUTF8(str));
-    for(int i = 0; i < count; i++) {
-        auto ch2(z_charUTF8(wcs, &l));
-        if(ch1 == ch2) return wcs;
-        wcs += l;
+static char* is_chars(cstr self, cstr _str, i32 _count) {
+    i32 l; auto ch1(z_charUTF8(self));
+    for(int i = 0; i < _count; i++) {
+        if(ch1 == z_charUTF8(_str, &l)) return (char*)_str;
+        _str += l;
     }
     return nullptr;
 }
 
 const zStringUTF8& zStringUTF8::trimLeft(cstr _str) {
-    auto _count(z_countUTF8(_str)); auto _buf(buffer()), _tmp(_buf);
-    while(is_chars(_tmp, _str, _count)) _str_buffer.count--, _tmp += z_charLengthUTF8(_tmp);
-    memcpy(_buf, _tmp, _str_buffer.size - (_tmp - _buf));
+    auto _count(z_countUTF8(_str)); auto _tmp(buffer());
+    while(is_chars(_tmp, _str, _count)) {
+        auto l(z_charLengthUTF8(_tmp));
+        _str_buffer.count--; _str_buffer.length -= l; _tmp += l;
+    }
+    memcpy(buffer(), _tmp, sizeCopy(_tmp));
     return *this;
 }
 
 const zStringUTF8& zStringUTF8::trimRight(cstr _str) {
-    auto _count(z_countUTF8(_str));
-    while(is_chars(z_ptrUTF8(str(), length() - 1), _str, _count)) _str_buffer.count--;
-    *(char*)z_ptrUTF8(str(), length()) = 0; return *this;
-}
-
-zArray<zStringUTF8> zStringUTF8::splitString() const {
-    zArray<zStringUTF8> arr;
-    int pos(0);
-    while(pos < length()) {
-        auto npos(indexOf("\n", pos));
-        auto str(substr(pos, (npos == -1 ? length() : npos) - pos));
-        arr += str.trimRight(" \r\t");
-        if(npos == -1) break;
-        pos = npos + 1;
+    auto _count(z_countUTF8(_str)); char* _ptr;
+    while(is_chars(_ptr = ptr(count() - 1), _str, _count)) {
+        _str_buffer.length -= z_charLengthUTF8(_ptr); _str_buffer.count--;
     }
-    return arr;
+    *ptr(count()) = 0; return *this;
 }
 
-zArray<zStringUTF8> zStringUTF8::split(cstr delim) const {
+zArray<zStringUTF8> zStringUTF8::_split(cstr _delim, bool _trim) const {
     zArray<zStringUTF8> arr;
-    int pos(0), ldelim(z_countUTF8(delim));
-    while(pos < length()) {
-        auto npos(indexOf(delim, pos));
-        arr += substr(pos, (npos == -1 ? length() : npos) - pos);
+    int pos(0), ldelim(z_countUTF8(_delim));
+    while(pos < count()) {
+        auto npos(indexOf("\n", pos));
+        auto str(substr(pos, (npos == -1 ? count() : npos) - pos));
+        if(_trim) arr += str.trimRight(" \r\t");
         if(npos == -1) break;
         pos = npos + ldelim;
     }
     return arr;
-
 }
 
 u8* zStringUTF8::state(u8 *ptr, bool save) {
@@ -258,40 +252,60 @@ const zStringUTF8& zStringUTF8::translate(cstr space) {
             auto idx((_rus - russian) / sizeRus);
             if(idx > 131) { _eng = space; sizeEng = sizeSpace; }
             else { _eng = &translate[idx * 2]; sizeEng = (1 + (_eng[1] != ' ')); }
-            memmove(_str + sizeEng, _str + sizeRus, _str_buffer.size - (_str + sizeRus - buffer()));
+            memmove(_str + sizeEng, _str + sizeRus, sizeCopy(_str + sizeRus));
             memcpy(_str, _eng, sizeEng);
         }
         _str += z_charLengthUTF8(_str);
     }
     if(*str() < '9') insert(0, space);
     _str_buffer.count = z_countUTF8(str());
+    _str_buffer.length = z_sizeUTF8(str());
+    return *this;
+}
+
+const zStringUTF8& zStringUTF8::changeRegister(cstr _search, cstr _replace) const {
+    auto _str(buffer());
+    while(*_str) {
+        auto ret(is_chars(_str, _search, 59));
+        if(ret) {
+            auto rpl(&_replace[ret - _search]);
+            memcpy(_str, rpl, charSize(ret));
+        }
+        _str += charSize(_str);
+    }
     return *this;
 }
 
 static cstr big   = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ";
-static cstr small = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяabcdefghijklmnopqrstuvwxyz";
-
-void zStringUTF8::changeRegister(cstr _search, cstr _replace) const {
-    auto _str(buffer());
-    while(*_str) {
-        auto _ret(is_chars(_str, _search, 33 + 26));
-        if(_ret) memcpy(_str, &_replace[_ret - _search], z_charLengthUTF8(_ret));
-        _str += z_charLengthUTF8(_str);
-    }
-}
+static cstr small = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 const zStringUTF8& zStringUTF8::lower() {
-    changeRegister(big, small);
-    return *this;
+    return changeRegister(big, small);
 }
 
 const zStringUTF8& zStringUTF8::upper() {
-    changeRegister(small, big);
-    return *this;
+    return changeRegister(small, big);
 }
 
 bool zStringUTF8::compare(cstr str) const {
-
-    return false;
+    if(z_sizeUTF8(str) != size()) return false;
+    auto _str(buffer()); int l1, l2;
+    while(*_str) {
+        auto ch1(z_charUTF8(_str, &l1));
+        auto ch2(z_charUTF8(str, &l2));
+        if(l1 != l2) return false;
+        if(ch1 != ch2) {
+            auto ret1(is_chars(_str, big, 33 + 26));
+            auto ok(ret1 && z_charUTF8(&small[ret1 - big]) == ch2);
+            if(!ok) {
+                auto ret2(is_chars(_str, small, 33 + 26));
+                ok = (ret2 && z_charUTF8(&big[ret2 - small]) == ch2);
+            }
+            if(!ok) return false;
+        }
+        _str += charSize(_str);
+        str  += charSize(str);
+    }
+    return true;
 }
 

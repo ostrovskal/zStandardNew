@@ -38,12 +38,14 @@ public:
     virtual void* readn(i32* psize = nullptr, i32 size = 0, i32 pos = -1, i32 mode = 0) const;
     // прочитать строку
     virtual zString readString(i32 pos = -1, i32 mode = 0) const;
+    virtual zStringUTF8 readStringUTF8(i32 pos = -1, i32 mode = 0) const;
     // вернуть массив строк из файла
-    zArray<zString> strings() const;
+    zArray<zStringUTF8> strings() const;
     // записать буфер
     virtual bool write(void* ptr, int size, cstr name = nullptr) const;
     // записать строку
     virtual bool writeString(const zString& s, bool clr) const;
+    virtual bool writeStringUTF8(const zStringUTF8& s, bool clr) const;
     // определить количество файлов
     virtual int	countFiles() const;
     // получить информацию

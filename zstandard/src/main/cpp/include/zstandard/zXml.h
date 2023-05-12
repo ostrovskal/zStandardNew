@@ -10,14 +10,14 @@ public:
 		friend class zXml;
 		struct zAttr {
 			zAttr() { }
-			zAttr(const zString& _n, const zString& _v) : value(_v) {
-				ns = _n.substrBefore(':', "");
-				name = _n.substrAfter(':', _n);
+			zAttr(const zStringUTF8& _n, const zStringUTF8& _v) : value(_v) {
+				ns = _n.substrBefore(":", "");
+				name = _n.substrAfter(":", _n);
 			}
 			bool operator == (cstr n) const { return name == n; }
-			zString ns;
-			zString name;
-			zString value;
+			zStringUTF8 ns;
+			zStringUTF8 name;
+			zStringUTF8 value;
 		};
 		zNode() { }
 		zNode(zNode* p) : parent(p) {
@@ -61,19 +61,19 @@ public:
 			return idx == -1 ? nullptr : attrs[idx];
 		}
 		// вернуть значение атрибута по имени
-		zString getAttrVal(cstr _name, cstr def) const {
+		zStringUTF8 getAttrVal(cstr _name, cstr def) const {
 			auto idx(attrs.indexOf<cstr>(_name));
 			return idx == -1 ? zString(def) : attrs[idx]->value;
 		}
 		// вернуть имя тега
-		const zString& getName() const { return name; }
+		const zStringUTF8& getName() const { return name; }
 		// вернуть значение тега
-		const zString& getVal() const { return value; }
+		const zStringUTF8& getVal() const { return value; }
 	protected:
 		// имя
-		zString name;
+		zStringUTF8 name;
 		// значение
-		zString value;
+		zStringUTF8 value;
 		// дочерние ноды
 		zArray<zNode*> children;
 		// атрибуты
@@ -105,7 +105,7 @@ public:
 	// вернуть корневой
 	const zNode* getRoot() const { return root; }
 	// вернуть путь 
-	const zString& getPath() const { return path; }
+	const zStringUTF8& getPath() const { return path; }
 	// текущая ошибка/строка
 	int err{ERROR_OK}, line{1};
 protected:
@@ -114,11 +114,11 @@ protected:
 		ERROR_INVALID_STRUCTURED, ERROR_ATTR_VALUE, ERROR_INVALID_TAG_VALUE
 	};
 	// получить имя
-	zString getName();
+	zStringUTF8 getName();
 	// получить значение
-	zString getValue(char delim);
+	zStringUTF8 getValue(char delim);
 	// блок CDATA
-	zString cdata();
+	zStringUTF8 cdata();
 	// сохранить
 	void _save(zNode* n, zFile* f, int tab);
 	// распарсить
@@ -132,9 +132,9 @@ protected:
 	// версия
 	float version{1.0f};
 	// кодировка
-	zString encoding{"utf-8"};
+	zStringUTF8 encoding{"utf-8"};
 	// путь
-	zString path;
+	zStringUTF8 path;
 	// заголовок
 	zNode* capt{nullptr};
 	// корневая нода
