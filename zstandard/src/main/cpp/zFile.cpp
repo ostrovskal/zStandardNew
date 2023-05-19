@@ -106,26 +106,9 @@ zString zFile::readString(int pos, int mode) const {
     return tmp;
 }
 
-zStringUTF8 zFile::readStringUTF8(int pos, int mode) const {
-    static char stmp[257];
-    zStringUTF8 tmp;
-    seek(pos, mode);
-    if(hf > 0) {
-        char ch; int idx(0);
-        while(readf(hf, &ch, 1) == 1) {
-            if(ch == '\r') continue;
-            if(ch == '\n') break;
-            stmp[idx++] = ch;
-            if(idx > 255) { stmp[idx] = 0; tmp += stmp; idx = 0; }
-        }
-        if(idx) { stmp[idx] = 0; tmp += stmp; }
-    }
-    return tmp;
-}
-
 zArray<zStringUTF8> zFile::strings() const {
     zArray<zStringUTF8> arr; zStringUTF8 str;
-    while((str = readString()).isNotEmpty()) arr += str;
+    while((str = readStringUTF8()).isNotEmpty()) arr += str;
     return arr;
 }
 
@@ -140,24 +123,11 @@ bool zFile::write(void* ptr, int size, cstr name) const {
     return ret;
 }
 
-bool zFile::writeString(const zString& s, bool clr) const {
+bool zFile::writeString(cstr s, bool clr) const {
     bool ret(false);
     if(hf > 0) {
-        auto l(s.length());
-        if((ret = (writef(hf, s.str(), l) == l))) {
-            l--;
-            if(clr && s[l] != '\r' && s[l] != '\n')
-                ret = (writef(hf, "\n", 1) == 1);
-        }
-    }
-    return ret;
-}
-
-bool zFile::writeStringUTF8(const zStringUTF8& s, bool clr) const {
-    bool ret(false);
-    if(hf > 0) {
-        auto l(z_sizeUTF8(s.str()));
-        if((ret = (writef(hf, s.str(), l) == l))) {
+        auto l(z_strlen(s));
+        if((ret = (writef(hf, s, l) == l))) {
             l--;
             if(clr && s[l] != '\r' && s[l] != '\n')
                 ret = (writef(hf, "\n", 1) == 1);
@@ -219,16 +189,16 @@ int zFile::length() const {
     return (hz ? (int)zinfo.usize : 0);
 }
 
-zArray<zFile::zFileInfo> zFile::find(const zString& path, cstr _msk) {
+zArray<zFile::zFileInfo> zFile::find(cstr path, cstr _msk) {
     zArray<zFileInfo> fl;
     static char fname[260];
     DIR* dir; struct dirent* ent; zFileInfo info{};
     zString msk(_msk); auto am(msk.split("*"));
-    if((dir = opendir(path.str()))) {
+    if((dir = opendir(path))) {
         while((ent = readdir(dir))) {
             if((strncmp(ent->d_name, ".", PATH_MAX) == 0) || (strncmp(ent->d_name, "..", PATH_MAX) == 0)) continue;
             // поиск по маске
-            bool res(true); auto _s(fname); auto namlen(strlen(ent->d_name));
+            bool res(true); auto _s(fname); auto namlen(z_strlen(ent->d_name));
             strcpy(fname, ent->d_name);// z_strlwr(fname);
             for(int i = 0; i < am.size(); i++) {
                 auto m(am[i]);
@@ -240,25 +210,25 @@ zArray<zFile::zFileInfo> zFile::find(const zString& path, cstr _msk) {
             }
             if(res) {
                 res = false;
+                auto l1(z_strlen(path));
+                strcpy(info.name, path);
+                strcpy(info.name + l1, ent->d_name);
                 if(ent->d_type & DT_DIR) {
                     struct stat st{};
-                    if(!stat(path + ent->d_name, &st)) {
+                    if(!stat(info.name, &st)) {
                         info.atime = st.st_atime; info.mtime = st.st_mtime; info.ctime = st.st_ctime;
                         info.csize = st.st_size;  info.usize = st.st_size;
                         info.attr = st.st_mode;   info.index = -1;
-                        auto l1((size_t)path.length());
-                        strcpy(info.name, path.str());
-                        strcpy(info.name + l1, ent->d_name);
                         auto ch(info.name[l1 + namlen]);
                         if(ch != '/' && ch != '\\') info.name[l1 + namlen] = '/';
-                         info.name[l1 + namlen + 1] = 0;
+                        info.name[l1 + namlen + 1] = 0;
                         res = true;
                     }
                 } else {
-                    zFile f(path + ent->d_name, true, false);
+                    zFile f(info.name, true, false);
                     res = f.info(info); f.close();
                 }
-                if(res) fl += info;
+                if(res) fl += info; else *info.name = 0;
             }
         }
         closedir(dir);

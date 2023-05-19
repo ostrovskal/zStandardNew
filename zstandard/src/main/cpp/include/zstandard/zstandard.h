@@ -141,16 +141,22 @@ inline int z_strncmpUTF8(cstr _str1, cstr _str2, i32 _size) {
     return 1;
 }
 
+inline int z_sizeCountUTF8(cstr first, cstr end) {
+    int count(0);
+    while(first < end) first += z_charLengthUTF8(first), count++;
+    return count;
+}
+
 // поиск строки в строке
 inline int z_strstrUTF8(cstr _str1, cstr _str2) {
-    cstr ret(nullptr); int idx(0);
+    cstr ret(nullptr);
     if(z_isUTF8(_str1)) ret = strstr(_str1, _str2);
-    while(_str1 < ret) _str1 += z_charLengthUTF8(_str1), idx++;
+    auto idx(z_sizeCountUTF8(_str1, ret));
     return ret ? idx : -1;
 }
 
 int z_decodeUTF8(int ch);
-int z_encodeUTF8(u8 ch);
+int z_encodeUTF8(int ch);
 
 // минимум
 template <typename T> T z_min(const T& v1, const T& v2) {
@@ -171,7 +177,7 @@ rtf z_vertexMinMax(zVertex2D* v, int count);
 // обрезка
 rti z_clipRect(crti& base, crti& rect);
 // проверка на разделитель
-bool z_delimiter(u8 c);
+bool z_delimiter(int c);
 // сохранение TGA файла
 void z_tgaSaveFile(cstr path, u8* ptr, int w, int h, int comp);
 // строка ошибки OpenGL

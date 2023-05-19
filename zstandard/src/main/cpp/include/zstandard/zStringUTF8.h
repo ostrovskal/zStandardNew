@@ -11,9 +11,9 @@ public:
     zStringUTF8() { init(); }
     zStringUTF8(zStringUTF8&& _str) noexcept { _str_buffer = _str._str_buffer; _str.init(); }
     zStringUTF8(const zStringUTF8& _str) { init(); *this = _str; }
-    zStringUTF8(cstr _str, i32 _count = -1);
-    zStringUTF8(char* _str, i32 _count = -1) : zStringUTF8((cstr)_str, _count) {}
-    zStringUTF8(u8* _str, i32 _count = -1) : zStringUTF8((cstr)_str, _count) {}
+    zStringUTF8(cstr _str, i32 _count = INT_MAX);
+    zStringUTF8(char* _str, i32 _count = INT_MAX) : zStringUTF8((cstr)_str, _count) {}
+    zStringUTF8(u8* _str, i32 _count = INT_MAX) : zStringUTF8((cstr)_str, _count) {}
     zStringUTF8(int ch, i32 _repeat);
     zStringUTF8(i32 value, u32 offs, bool hex, u32 radix = 0);
     // деструктор
@@ -72,11 +72,11 @@ public:
     const zStringUTF8& slash(cstr ch = "/") { if(!endsWith(ch)) *this += ch; return *this; }
     const zStringUTF8& lower();
     const zStringUTF8& upper();
-    const zStringUTF8& reverse();
+    const zStringUTF8& reverse() const;
     const zStringUTF8& replaceAmp(bool dir);
     const zStringUTF8& replace(cstr _old, cstr _new);
     const zStringUTF8& remove(cstr str);
-    const zStringUTF8& remove(i32 idx, i32 _count = -1);
+    const zStringUTF8& remove(i32 idx, i32 _count = INT_MAX);
     const zStringUTF8& insert(i32 idx, cstr str);
     const zStringUTF8& trim() { return trim(" \t\r\n"); }
     const zStringUTF8& trim(cstr str) { trimLeft(str); return trimRight(str); }
@@ -84,7 +84,7 @@ public:
     const zStringUTF8& trimRight(cstr str);
     const zStringUTF8& crop(i32 _count) { remove(0, _count); return *this; }
     const zStringUTF8& translate(cstr space);
-    zStringUTF8 substr(i32 idx, i32 _count = -1) const;
+    zStringUTF8 substr(i32 idx, i32 _count = INT_MAX) const;
     zStringUTF8 substrAfter(cstr str, cstr no = nullptr) const { return _after(str, z_countUTF8(str), no, false); }
     zStringUTF8 substrAfterLast(cstr str, cstr no = nullptr) const { return _after(str, z_countUTF8(str), no, true); }
     zStringUTF8 substrBefore(cstr str, cstr no = nullptr) const { return _before(str, z_countUTF8(str), no, false); }
@@ -100,6 +100,7 @@ public:
     int indexOf(cstr str, i32 idx = 0) const { return _indexOf(str, idx); }
     int indexOfLast(cstr str, i32 idx = 0) const { return _indexOfLast(str, idx, z_countUTF8(str)); }
     cstr str() const { return (_str_buffer.size_buf > Z_BUFFER_LENGTH ? _str_buffer.ptr : _str_buffer.str); }
+    char* ptr(i32 idx = INT_MAX) const { return (char*)z_ptrUTF8(buffer(), idx); }
     u8* state(u8* ptr, bool save);
 protected:
 #pragma pack(push, 1)
@@ -119,7 +120,7 @@ protected:
     static zStringUTF8 add(cstr str1, i32 _count1, cstr str2, i32 _count2);
     zStringUTF8 _after(cstr str, i32 _count, cstr no, bool last) const;
     zStringUTF8 _before(cstr str, i32 _count, cstr no, bool last) const;
-    int _indexOf(cstr _str, i32 idx) const { auto _idx(z_strstrUTF8(z_ptrUTF8(str(), idx), _str)); return (_idx == -1 ? -1 : _idx + idx); }
+    int _indexOf(cstr _str, i32 idx) const { auto _idx(z_strstrUTF8(ptr(idx), _str)); return (_idx == -1 ? -1 : _idx + idx); }
     int _indexOfLast(cstr str, i32 idx, i32 _count) const;
     void init() { memset(&_str_buffer, 0, sizeof(STRING_BUFFER)); _str_buffer.size_buf = Z_BUFFER_LENGTH; }
     zArray<zStringUTF8> _split(cstr _delim, bool _trim) const;
@@ -127,9 +128,8 @@ protected:
     const zStringUTF8& add(cstr str, i32 _count);
     const zStringUTF8& make(cstr str, i32 _count);
     const zStringUTF8& changeRegister(cstr _search, cstr _replace) const;
-    char* ptr(i32 idx = INT_MAX) const { return (char*)z_ptrUTF8(buffer(), idx); }
     // вернуть размер при копировании строки
-    i32 sizeCopy(cstr ptr) const { return _str_buffer.size_buf - (ptr - str()); }
+    i32 sizeCopy(cstr ptr) const { return _str_buffer.size_buf - (i32)(ptr - str()); }
 private:
     STRING_BUFFER _str_buffer{};
 };

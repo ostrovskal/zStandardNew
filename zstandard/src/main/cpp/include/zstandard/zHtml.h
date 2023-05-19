@@ -11,9 +11,9 @@ public:
     // конструктор
     zHtml(cstr text, const std::function<bool (cstr tag, bool opened, zHtml* html)>& parser);
     // декодировать
-    zString decode(u8* _text, i32 size, const std::function<bool (cstr tag, bool opened, zHtml* html)>& parser);
+    zStringUTF8 decode(u8* _text, i32 size, const std::function<bool (cstr tag, bool opened, zHtml* html)>& parser);
     // вернуть строковое значение атрибута
-    zString getStringAttr(cstr name, cstr def);
+    zStringUTF8 getStringAttr(cstr name, cstr def);
     // вернуть целое значение атрибута
     int getIntegerAttr(cstr name, int radix, int def);
     // вернуть цветовое значение атрибута
@@ -23,22 +23,24 @@ public:
     // текущая строка
     int line{1};
     // текст
-    zString text;
+    zStringUTF8 text;
 protected:
     // распарсить
-    bool parser(const zString& _tag, const std::function<bool (cstr tag, bool opened, zHtml* html)>& _parser);
+    bool parser(const zStringUTF8& _tag, const std::function<bool (cstr tag, bool opened, zHtml* html)>& _parser);
     // комментарий
     bool skipComment();
+    // следующий символ
+    int next();
     // найти значение атрибута по его имени
-    zString findValueAttribute(cstr name) const;
+    zStringUTF8 findValueAttribute(cstr name) const;
     // получить имя
-    zString getName();
+    zStringUTF8 getName();
     // получить значение
-    zString getValue(char delim);
+    zStringUTF8 getValue(char delim);
     // начало/конец декодирования
     char* start{nullptr}, *end{nullptr};
     // html текст
     char* html{nullptr};
     // массив атрибутов тега
-    zArray<zString> attrs{};
+    zArray<zStringUTF8> attrs{};
 };

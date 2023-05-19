@@ -52,7 +52,7 @@ protected:
     // получение литерала
     bool jliteral();
     // следующий символ
-    char jnext() { return jcur < jend ? *jcur++ : 0; }
+    int jnext();
     // парсер
     bool parse(Node* p, JType jt, int lev);
     // массив для чисел

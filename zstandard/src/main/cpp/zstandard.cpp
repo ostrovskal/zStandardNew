@@ -382,7 +382,7 @@ rti z_clipRect(crti& p, crti& r) {
     return out;
 }
 
-bool z_delimiter(u8 c) {
+bool z_delimiter(int c) {
     if(c == '_' || c >= 0xC0) return false;
     if(c < '0') return true;
     if(c > '9' && c < '@') return true;
@@ -430,7 +430,7 @@ int z_decodeUTF8(int ch) {
     return ((r >= 0x410 && r <= 0x44f) ? (0xC0 + (r - 0x410)) : '?');
 }
 
-int z_encodeUTF8(u8 ch) {
+int z_encodeUTF8(int ch) {
     if(ch < 0x80) return ch;
     auto wc(cp1251_2uni[ch - 0x80]);
     return (wc == 0xfffd ? '?' : ((wc & 0b00000000'00111111) << 8) | (((wc & 0b00000111'11000000) >> 6) | 0b10000000'11000000));

@@ -119,6 +119,8 @@ protected:
 	zStringUTF8 getValue(char delim);
 	// блок CDATA
 	zStringUTF8 cdata();
+    // следующий знак
+    int next();
 	// сохранить
 	void _save(zNode* n, zFile* f, int tab);
 	// распарсить

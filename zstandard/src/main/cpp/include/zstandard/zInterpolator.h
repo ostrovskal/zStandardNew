@@ -28,6 +28,8 @@ public:
     void clear() { params.clear(); index = 0; }
     // проверка на наличие анимаций
     bool isEmpty() const { return params.isEmpty(); }
+    // перезапуск
+    bool restart() { index = 0; frame = 0; }
     // текущий кадр/количество кадров
     int frame{0}, frames{0};
 private:

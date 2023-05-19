@@ -61,25 +61,6 @@ inline char *z_strrev(char *str) {
     return str;
 }
 
-class _zStringUTF8 {
-public:
-    // конструктор
-    _zStringUTF8(cstr s, size_t _l = 0);
-    // деструктор
-    ~_zStringUTF8() { delete ptr; }
-    // приведение типа
-    operator cstr() const { return str(); }
-    // вернуть строку
-    cstr str() const { return (cstr)ptr; }
-    // вернуть длину
-    size_t length() const { return len; }
-protected:
-    // указатель на буфер
-    u8* ptr{nullptr};
-    // длина строки
-    size_t len{0};
-};
-
 class zString {
     static const i32 Z_BUFFER_LENGTH = 24;
 public:
@@ -90,7 +71,6 @@ public:
     zString(cstr cws, int len = -1);
     zString(char* ws, int len = -1) : zString((cstr)ws, len) {}
     zString(u8* b, int len = -1) : zString((cstr)b, len) {}
-//    zString(const zStringUTF8& str) { init(); *this = str; }
     zString(char ws, i32 rep);
     zString(i32 value, u32 offs, bool hex, u32 radix = 0);
     // деструктор
@@ -98,7 +78,7 @@ public:
     // привидение типа
     operator cstr() const { return str(); }
     // вернуть по индексу
-    char operator[](i32 idx) const { return buffer()[idx]; }
+    char operator[](i32 idx) const { return at(idx); }
     // операторы сравнения
     friend bool operator == (const zString& str1, const zString& str2) { return (strcmp(str1.str(), str2.str()) == 0); }
     friend bool operator < (const zString& str1, const zString& str2) { return (strcmp(str1.str(), str2.str()) < 0); }
@@ -110,7 +90,6 @@ public:
     friend bool operator != (cstr wcs, const zString& str) { return !(operator == (wcs, str)); }
     // операторы присваивания
     const zString& operator = (const zString& str) { return make(str, str.length()); }
-  //  const zString& operator = (const zStringUTF8& str) { return make(str.str(), (int)str.length()); }
     const zString& operator = (zString&& str) noexcept { empty(); _str = str._str; str.init(); return *this; }
     const zString& operator = (char ws) { return make((cstr)&ws, 1); }
     const zString& operator = (cstr wcs) { return make(wcs, z_strlen(wcs)); }

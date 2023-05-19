@@ -38,14 +38,13 @@ public:
     virtual void* readn(i32* psize = nullptr, i32 size = 0, i32 pos = -1, i32 mode = 0) const;
     // прочитать строку
     virtual zString readString(i32 pos = -1, i32 mode = 0) const;
-    virtual zStringUTF8 readStringUTF8(i32 pos = -1, i32 mode = 0) const;
+    virtual zStringUTF8 readStringUTF8(i32 pos = -1, i32 mode = 0) const { return readString(pos, mode).str(); }
     // вернуть массив строк из файла
     zArray<zStringUTF8> strings() const;
     // записать буфер
     virtual bool write(void* ptr, int size, cstr name = nullptr) const;
     // записать строку
-    virtual bool writeString(const zString& s, bool clr) const;
-    virtual bool writeStringUTF8(const zStringUTF8& s, bool clr) const;
+    virtual bool writeString(cstr s, bool clr) const;
     // определить количество файлов
     virtual int	countFiles() const;
     // получить информацию
@@ -63,7 +62,7 @@ public:
     // вернуть путь
     cstr pth() const { return path; }
     // найти
-    static zArray<zFileInfo> find(const zString& path, cstr _msk);
+    static zArray<zFileInfo> find(cstr path, cstr _msk);
     // переименование/перемещение
     static bool	move(cstr _old, cstr _new) { return rename(_old, _new) == 0; }
     // удаление

@@ -46,9 +46,9 @@ zStringUTF8::zStringUTF8(int ch, i32 _count) {
 }
 
 const zStringUTF8& zStringUTF8::add(cstr _str, i32 _count) {
-    auto _size(z_sizeUTF8(_str, _count));
-    alloc(count() + _count, _size, true);
-    memcpy(ptr(_count), _str, _size);
+    auto _size(z_sizeUTF8(_str, _count)), c(count());
+    alloc(c + _count, size() + _size, true);
+    memcpy(ptr(c), _str, _size);
     return *this;
 }
 
@@ -61,7 +61,6 @@ const zStringUTF8& zStringUTF8::make(cstr _str, i32 _count) {
 zStringUTF8 zStringUTF8::substr(i32 idx, i32 _count) const {
     auto count1(count());
     if(idx <= count1) {
-        if(_count < 0) _count = count1;
         if((idx + _count) > count1) _count = (count1 - idx);
     } else idx = 0, _count = 0;
     return { ptr(idx), _count };
@@ -91,9 +90,9 @@ int zStringUTF8::_indexOfLast(cstr str, i32 idx, i32 _count) const {
     return last;
 }
 
-const zStringUTF8& zStringUTF8::reverse() {
+const zStringUTF8& zStringUTF8::reverse() const {
     auto size(z_sizeUTF8(str())), _count(count());
-    auto buf(std::make_unique<char>(size + 1)); auto _buf(buf.get());
+    auto buf(std::unique_ptr<char>(new char[size + 1])); auto _buf(buf.get());
     while(_count-- > 0) {
         auto _ptr(ptr(_count)); auto sz(charSize(_ptr));
         memcpy(_buf, _ptr, sz); _buf += sz;
@@ -112,7 +111,7 @@ void zStringUTF8::set(i32 idx, cstr _str) {
 
 zStringUTF8 zStringUTF8::add(cstr str1, i32 _count1, cstr str2, i32 _count2) {
     auto size1(z_sizeUTF8(str1, _count1)), size2(z_sizeUTF8(str2, _count2));
-    auto ptr(std::make_unique<char>(size1 + size2 + 1)); ptr.get()[size1 + size2] = 0;
+    auto ptr(std::unique_ptr<char>(new char[size1 + size2 + 1])); ptr.get()[size1 + size2] = 0;
     memcpy((char*)memcpy(ptr.get(), str1, size1) + size1, str2, size2);
     return { ptr.get() };
 }
@@ -122,21 +121,23 @@ const zStringUTF8& zStringUTF8::replace(cstr _old, cstr _new) {
     auto _str(buffer()), _buf(_str);
     // подсчитать новый размер
     while((_buf = strstr(_buf, _old))) count++, _buf += sizeOld;
-    auto size(z_sizeUTF8(str()) - (sizeOld - sizeNew) * count);
-    auto tmp(std::make_unique<char>(size + 1)); auto _tmp(tmp.get()); _tmp[size] = 0;
-    // непосредственно замена
-    while((_buf = strstr(_str, _old))) {
-        // копируем разницу
-        auto sz(_buf - _str);
-        memcpy(_tmp, _str, sz); _tmp += sz;
-        // копируем новый
-        memcpy(_tmp, _new, sizeNew); _tmp += sizeNew;
-        // сдвигаем указатель
-        _str = _buf + sizeOld;
+    if(count) {
+        auto size(z_sizeUTF8(str()) - (sizeOld - sizeNew) * count);
+        auto tmp(std::unique_ptr<char>(new char[size + 1]));
+        auto _tmp(tmp.get()); _tmp[size] = 0;
+        // непосредственно замена
+        while((_buf = strstr(_str, _old))) {
+            // копируем разницу
+            auto sz(_buf - _str);
+            memcpy(_tmp, _str, sz); _tmp += sz;
+            // копируем новый
+            memcpy(_tmp, _new, sizeNew); _tmp += sizeNew;
+            // сдвигаем указатель
+            _str = _buf + sizeOld;
+        }
+        memcpy(_tmp, _str, size - (_tmp - tmp.get()));
+        memcpy(alloc(z_countUTF8(tmp.get()), size, false), tmp.get(), size);
     }
-    memcpy(_tmp, _str, size - (_tmp - tmp.get()));
-    alloc(z_countUTF8(tmp.get()), size, false);
-    memcpy(buffer(), tmp.get(), size);
     return *this;
 }
 
@@ -153,7 +154,6 @@ const zStringUTF8& zStringUTF8::remove(cstr _str) {
 const zStringUTF8& zStringUTF8::remove(i32 idx, i32 _count) {
     auto count1(count());
     if(idx < count1) {
-        if(_count < 0) _count = count1;
         if((idx + _count) > count1) _count = (count1 - idx);
         auto _ptr(ptr(idx)); auto _size(z_sizeUTF8(_ptr, _count));
         memcpy(_ptr, _ptr + _size, sizeCopy(_ptr + _size));
@@ -174,10 +174,10 @@ const zStringUTF8& zStringUTF8::insert(i32 idx, cstr _str) {
     return *this;
 }
 
-static char* is_chars(cstr self, cstr _str, i32 _count) {
+static cstr is_chars(cstr self, cstr _str, i32 _count) {
     i32 l; auto ch1(z_charUTF8(self));
     for(int i = 0; i < _count; i++) {
-        if(ch1 == z_charUTF8(_str, &l)) return (char*)_str;
+        if(ch1 == z_charUTF8(_str, &l)) return _str;
         _str += l;
     }
     return nullptr;

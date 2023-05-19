@@ -90,6 +90,7 @@ public:
     zPoint(const u32 val) { set(val); }
 	void empty() { x = y = 0; }
 	bool isEmpty() const { return x == 0 && y == 0; }
+	bool isNotEmpty() const { return !isEmpty(); }
     const T& operator [](int index) const { return buf[index]; }
 	const zPoint<T>& operator = (const zPoint<T>& p) { x = p.x; y = p.y; return *this; }
 	const zPoint<T>& operator += (const zPoint<T>& p) { x += p.x; y += p.y; return *this; }
@@ -119,6 +120,7 @@ public:
 	T interval() const { return (h - w) ; }
 	T clamp(const T& p) { return (p < w ? w : p > h ? h : p); }
 	bool isEmpty() const { return w < 1 || h < 1; }
+	bool isNotEmpty() const { return !isEmpty(); }
     const T& operator [](int index) const { return buf[index]; }
 	zSize<T> operator + (const zSize<T>& s) { return zSize<T>(w + s.w, h + s.h); }
 	zSize<T> operator + (const T& s) { return zSize<T>(w + s, h + s); }

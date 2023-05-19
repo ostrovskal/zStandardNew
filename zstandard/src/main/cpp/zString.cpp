@@ -7,12 +7,6 @@
 
 static cstr hex("0123456789ABCDEF-");
 
-_zStringUTF8::_zStringUTF8(cstr s, size_t _l) {
-    len = strlen(s); len = ((_l <= 0 || _l >= len) ? len : _l);
-    ptr = new u8[++len]; memcpy(ptr, s, len);
-    z_utfToAscii(ptr, len); len = strlen((cstr)ptr);
-}
-
 zString::zString(i32 value, u32 offs, bool _hex, u32 radix) {
     init();
     *this = z_fmtValue(value, offs, _hex, radix);
