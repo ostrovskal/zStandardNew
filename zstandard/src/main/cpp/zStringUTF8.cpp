@@ -205,9 +205,10 @@ zArray<zStringUTF8> zStringUTF8::_split(cstr _delim, bool _trim) const {
     zArray<zStringUTF8> arr;
     int pos(0), ldelim(z_countUTF8(_delim));
     while(pos < count()) {
-        auto npos(indexOf("\n", pos));
+        auto npos(indexOf(_delim, pos));
         auto str(substr(pos, (npos == -1 ? count() : npos) - pos));
-        if(_trim) arr += str.trimRight(" \r\t");
+        if(_trim) str.trimRight(" \r\t");
+        arr += str;
         if(npos == -1) break;
         pos = npos + ldelim;
     }
@@ -226,16 +227,16 @@ u8* zStringUTF8::state(u8 *ptr, bool save) {
 
 const zStringUTF8 &zStringUTF8::replaceAmp(bool dir) {
     if(dir) {
+        replace("&amp;", "&");
         replace("&lt;", "<");
         replace("&gt;", ">");
         replace("&quot;", "\"");
-        replace("&amp;", "&");
         replace("&nbsp;", " ");
     } else {
+        replace("&", "&amp;");
         replace("<", "&lt;");
         replace(">", "&gt;");
         replace("\"", "&quot;");
-        replace("&", "&amp;");
     }
     return *this;
 }
@@ -277,7 +278,7 @@ const zStringUTF8& zStringUTF8::changeRegister(cstr _search, cstr _replace) cons
 }
 
 static cstr big   = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ";
-static cstr small = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ";
+static cstr small = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяabcdefghijklmnopqrstuvwxyz";
 
 const zStringUTF8& zStringUTF8::lower() {
     return changeRegister(big, small);

@@ -197,6 +197,3 @@ zString z_urlEncode(cstr ptr);
 zString z_urlDecode(cstr ptr);
 // форматирование
 zString z_fmt(cstr fmt, ...);
-// преобразование из utf8 -> ascii
-zString z_stringUtfToAscii(cstr _text);
-

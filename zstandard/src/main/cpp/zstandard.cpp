@@ -344,26 +344,6 @@ void z_scale(cpti& c, zVertex2D* v, int count, float xzoom, float yzoom) {
     }
 }
 
-u8* z_utfToAscii(u8* u, size_t l) {
-    auto out(u), end(u + l), src(out); int r;
-    while(u < end) {
-        u8 c1(*u++);
-        if(c1 <= 0x7F) r = c1;
-        else if(c1 <= 0xDF) r = ((c1 & 0x1f) << 6) | (*u++ & 0x3f);
-        else if(c1 <= 0xEF) {
-            auto c2(*u++ & 0x3f), c3(*u++ & 0x3f);
-            r = ((c1 & 0x0f) << 12) | (c2 << 6) | c3;
-        } else if(c1 <= 0xF4) {
-            auto c2(*u++ & 0x3f), c3(*u++ & 0x3f), c4(*u++ & 0x3f);
-            auto utf16((u16)(((c1 & 0x07) << 18) | (c2 << 12) | (c3 << 6) | c4) - 0x10000);
-            r = (((utf16 / 0x400) + 0xD800) >> 16) | ((utf16 % 0x400) + 0xDC00);
-        } else r = '?';
-        *out++ = (u8)(r < 0x80 ? r : ((r >= 0x410 && r <= 0x44f) ? (0xC0 + (r - 0x410)) : '?'));
-    }
-    *out = 0;
-    return src;
-}
-
 rti z_clipRect(crti& p, crti& r) {
     static rti out;
     out.empty();
@@ -416,8 +396,8 @@ static const u16 cp1251_2uni[128] = {
         0x0448, 0x0449, 0x044a, 0x044b, 0x044c, 0x044d, 0x044e, 0x044f,
 };
 
-int z_decodeUTF8(int ch) {
-    int r;
+int z_decodeUTF8(u32 ch) {
+    int r(0);
     switch(z_charLengthUTF8((cstr)&ch)) {
         case 1: return ch;
         case 2: r = ((ch & 0b0000000000011111) << 6) | ((ch & 0b00111111'00000000) >> 8); break;
@@ -430,29 +410,32 @@ int z_decodeUTF8(int ch) {
     return ((r >= 0x410 && r <= 0x44f) ? (0xC0 + (r - 0x410)) : '?');
 }
 
-int z_encodeUTF8(int ch) {
+int z_encodeUTF8(u32 ch) {
     if(ch < 0x80) return ch;
     auto wc(cp1251_2uni[ch - 0x80]);
     return (wc == 0xfffd ? '?' : ((wc & 0b00000000'00111111) << 8) | (((wc & 0b00000111'11000000) >> 6) | 0b10000000'11000000));
 }
 
-size_t z_cp1251ToUtf8(u8* src, u8* out, size_t l) {
-    auto _out(out);
-    while(l-- > 0) {
-        u8 c(*src++); u16 wc;
-        if(c < 0x80) *out++ = c;
-        else {
-            wc = cp1251_2uni[c - 0x80];
-            if(wc == 0xfffd) *out++ = '?';
-            else {
-                u16 _1((wc  & 0b00000000'00111111) << 8);
-                u16 _2(((wc & 0b00000111'11000000) >> 6) | 0b10000000'11000000);
-                *(u16*)out = _1 | _2; out += 2;
-            }
-        }
+zStringUTF8 z_cp1251ToUtf8(const zString& src) {
+    auto len(src.length());
+    auto tmp(std::unique_ptr<char>(new char[(len + 1) * 4])); auto _tmp(tmp.get());
+    for(int i = 0 ; i < len; i++) {
+        *(int*)_tmp = z_encodeUTF8(src[i]);
+        _tmp += z_charLengthUTF8(_tmp);
     }
-    *out = 0;
-    return (size_t)(out - _out);
+    *_tmp = 0;
+    return { tmp.get() };
+}
+
+zString z_utf8ToCp1251(const zStringUTF8& src) {
+    auto len(src.count()); auto _src(src.str());
+    auto tmp(std::unique_ptr<char>(new char[(len + 1)])); auto _tmp(tmp.get());
+    for(int i = 0 ; i < len; i++) {
+        *_tmp++ = (char)z_decodeUTF8(z_charUTF8(_src));
+        _src += z_charLengthUTF8(_src);
+    }
+    *_tmp = 0;
+    return { tmp.get() };
 }
 
 static const u8 sTable[256] = {

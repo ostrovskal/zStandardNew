@@ -19,7 +19,7 @@ public:
     // деструктор
     ~zInterpolator() { clear(); }
     // инициализация
-    void init(float _start, bool _loop) { start = _start; loop = _loop; }
+    void init(float _start, bool _loop) { start = _start; loop = _loop; type = NONE; }
     // добавление анимации
     void add(float _dest, INTERPOLATOR_TYPE _type, int _frames) { params += { _type, _dest, _frames }; }
     // выполнить кадр анимации
@@ -29,7 +29,7 @@ public:
     // проверка на наличие анимаций
     bool isEmpty() const { return params.isEmpty(); }
     // перезапуск
-    bool restart() { index = 0; frame = 0; }
+    void restart() { index = 0; init(start, loop); }
     // текущий кадр/количество кадров
     int frame{0}, frames{0};
 private:

@@ -93,6 +93,7 @@ zString zFile::readString(int pos, int mode) const {
     static char stmp[257];
     zString tmp;
     seek(pos, mode);
+    tmp.empty();
     if(hf > 0) {
         char ch; int idx(0);
         while(readf(hf, &ch, 1) == 1) {
@@ -108,7 +109,7 @@ zString zFile::readString(int pos, int mode) const {
 
 zArray<zStringUTF8> zFile::strings() const {
     zArray<zStringUTF8> arr; zStringUTF8 str;
-    while((str = readStringUTF8()).isNotEmpty()) arr += str;
+    while((str = readString()).isNotEmpty()) arr += str;
     return arr;
 }
 

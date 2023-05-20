@@ -155,9 +155,6 @@ inline int z_strstrUTF8(cstr _str1, cstr _str2) {
     return ret ? idx : -1;
 }
 
-int z_decodeUTF8(int ch);
-int z_encodeUTF8(int ch);
-
 // минимум
 template <typename T> T z_min(const T& v1, const T& v2) {
     return v1 <= v2 ? v1 : v2;
@@ -327,9 +324,6 @@ void* z_ston_(cstr s, i32 r, char** end = nullptr);
 template<typename T = int> T z_ston(cstr s, i32 r, char** end = nullptr) {
     return *(T*)z_ston_(s, r, end);
 }
-// UTF->ASCII
-u8* z_utfToAscii(u8* u, size_t l);
-size_t z_cp1251ToUtf8(u8 *src, u8 *out, size_t l);
 // найти после вхождения
 inline char* z_strAfter(cstr s, int f) {
     s = strchr(s, f); return const_cast<char*>(s ? s + 1 : nullptr);
@@ -432,6 +426,9 @@ struct HZIP {
 
 #define _zipClose(hz)    { hz->zip ? zipClose(hz->zip) : unzClose(hz->unz); }
 
+int z_decodeUTF8(u32 ch);
+int z_encodeUTF8(u32 ch);
+
 #include "zZip.h"
 #include "zUnzip.h"
 #include "zRand.h"
@@ -442,8 +439,10 @@ struct HZIP {
 #include "zJSON.h"
 #include "zXml.h"
 #include "zEnum.h"
-#include "zRand.h"
 
 #ifndef WIN32
     #include "zGRef.h"
 #endif
+
+zStringUTF8 z_cp1251ToUtf8(const zString& src);
+zString z_utf8ToCp1251(const zStringUTF8& src);

@@ -38,7 +38,6 @@ public:
     virtual void* readn(i32* psize = nullptr, i32 size = 0, i32 pos = -1, i32 mode = 0) const;
     // прочитать строку
     virtual zString readString(i32 pos = -1, i32 mode = 0) const;
-    virtual zStringUTF8 readStringUTF8(i32 pos = -1, i32 mode = 0) const { return readString(pos, mode).str(); }
     // вернуть массив строк из файла
     zArray<zStringUTF8> strings() const;
     // записать буфер
