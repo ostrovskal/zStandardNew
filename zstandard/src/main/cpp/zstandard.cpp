@@ -417,14 +417,14 @@ int z_encodeUTF8(u32 ch) {
 }
 
 zStringUTF8 z_cp1251ToUtf8(const zString& src) {
-    auto len(src.length());
+    auto len(src.length()); auto _src((u8*)src.str());
     auto tmp(std::unique_ptr<char>(new char[(len + 1) * 4])); auto _tmp(tmp.get());
-    for(int i = 0 ; i < len; i++) {
-        *(int*)_tmp = z_encodeUTF8(src[i]);
+    for(int i = 0; i < len; i++) {
+        *(int*)_tmp = z_encodeUTF8(*_src++);
         _tmp += z_charLengthUTF8(_tmp);
     }
     *_tmp = 0;
-    return { tmp.get() };
+    return {tmp.get()};
 }
 
 zString z_utf8ToCp1251(const zStringUTF8& src) {
