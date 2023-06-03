@@ -43,7 +43,7 @@ zShader::~zShader() {
     id = 0;
 }
 
-GLuint zShader::linkVariables(i32* buf, const zString& vars) const {
+GLuint zShader::linkVariables(i32* buf, czs& vars) const {
     auto arr(vars.split(";")); int pos;
     for(auto& v : arr) {
         auto _v(v.str());

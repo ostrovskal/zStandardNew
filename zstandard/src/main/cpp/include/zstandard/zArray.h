@@ -135,6 +135,7 @@ protected:
 			}
 			data = ptr;
 		}
+		for(int i = 0; i < _count; i++) ::new(data + i + count) T();
 	}
 	// количество элементов
 	int count{0};

@@ -134,3 +134,5 @@ protected:
 private:
     STRING_BUFFER _str_buffer{};
 };
+
+using czs = const zStringUTF8;

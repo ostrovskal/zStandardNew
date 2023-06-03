@@ -8,7 +8,7 @@
 char* zStringUTF8::alloc(i32 _count, i32 _size, bool is_copy) {
     auto _old(buffer());
     if(_size) {
-        auto size(_size + 64);
+        auto size(_size + 1);
         if(size > _str_buffer.size_buf) {
             // выделим память под новый буфер
             auto _new(new char[size]);
