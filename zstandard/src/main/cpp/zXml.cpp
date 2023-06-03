@@ -10,20 +10,6 @@ static cstr msg_err[] = {
 		"INVALID_ATTR_VALUE", "INVALID_TAG_VALUE", "INVALID_TAG_VALUE"
 };
 
-/*
-void zXml::skip() {
-	while(xml < end) {
-		auto ch(z_charUTF8(xml));
-		if((ch >= 0x09 && ch <= 0x0D) || ch == 0x20) {
-			if(ch == 0x0D) line++;
-			xml += z_charLengthUTF8(xml);
-			continue;
-		}
-	}
-	err = ERROR_EOF;
-}
-*/
-
 int zXml::next() {
 	int ch(0);
 	if(xml < end) {
@@ -39,7 +25,7 @@ zXml::zXml(u8* ptr, i32 size) {
 }
 
 zXml::zXml(cstr _path) {
-	zFile f;
+	zFile f; path = _path;
 	if(f.open(_path, true, false)) {
 		int size(0); auto tmp((u8*)f.readn(&size));
 		f.close(); open(_path, tmp, size);
@@ -94,9 +80,9 @@ zStringUTF8 zXml::getValue(char delim) {
 
 zStringUTF8 zXml::getName() {
 	z_skip_spc(&xml, line);
-	err = ERROR_OK; auto _s(xml); int count(0), ch;
+	err = ERROR_OK; auto _s(xml); int count(0);
 	while(xml < end && !is_delimiter(z_charUTF8(xml))) next(), count++;
-	return (err == ERROR_OK ? zStringUTF8(_s, count) : "");
+	return (err == ERROR_OK ? zStringUTF8(_s, count) : zStringUTF8(""));
 }
 
 zStringUTF8 zXml::cdata() {
@@ -208,7 +194,6 @@ bool zXml::parser(zNode* p) {
 }
 
 bool zXml::decode() {
-//	z_skip_spc(&xml, line);
 	if(!parser(nullptr)) return false;
 	if(capt) {
 		auto enc(capt->getAttr("encoding"));
@@ -249,7 +234,7 @@ void zXml::_save(zNode* n, zFile* f, int tab) {
 bool zXml::save(cstr _path) {
 	zFile f;
 	if(f.open(_path, false, false)) {
-		if(capt) _save(capt, &f, 0);
+		f.writeString("<?xml version = \"1.0\" encoding=\"utf-8\" ?>", true);
 		_save(root, &f, 0);
 		f.close();
 		return true;

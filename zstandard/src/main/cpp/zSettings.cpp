@@ -9,13 +9,13 @@ zSettings::zSettings(cstr root, cstr* opts) {
     pathCache = pathRoot + "cache/";
     // формируем массив опций со значениями по умолчанию
     int offs(0), plus(1); ZOPTION::TOPTION t(ZOPTION::TOPTION::_unk);
-    zString o;
+    zStringUTF8 o;
     while((o = *opts++).isNotEmpty()) {
-        auto name(o.substrBefore('='));
+        auto name(o.substrBefore("="));
         auto isname(name.isNotEmpty());
         if(!isname) {
             // поиск значений
-            auto cat(o.substrAfterLast(',').substrBeforeLast(']').lower());
+            auto cat(o.substrAfterLast(",").substrBeforeLast("]").lower());
             if(cat == "byt")      t = ZOPTION::TOPTION::_byt, plus = 1;
             else if(cat == "bol") t = ZOPTION::TOPTION::_bol, plus = 1;
             else if(cat == "hex") t = ZOPTION::TOPTION::_hex, plus = 4;
@@ -24,7 +24,7 @@ zSettings::zSettings(cstr root, cstr* opts) {
             else if(cat == "pth") t = ZOPTION::TOPTION::_pth, plus = 0;
             name = o;
         }
-        defs += ZOPTION(name, o.substrAfter('='), t, offs);
+        defs += ZOPTION(name, o.substrAfter("="), t, offs);
         offs += isname * plus;
     }
 }
@@ -68,8 +68,8 @@ void zSettings::setOption(u8* ptr, const ZOPTION& opt) {
             break;
     }
 }
-	
-zString zSettings::getOption(const u8* ptr, int idx) {
+
+zStringUTF8 zSettings::getOption(const u8* ptr, int idx) {
     u32 n; int radix(RADIX_DEC); cstr ret;
     auto opt(defs[idx]); auto o(opt.offs);
     switch(opt.type) {
@@ -96,7 +96,7 @@ zString zSettings::getOption(const u8* ptr, int idx) {
             ret = "";
             break;
     }
-    return zString(ret);
+    return zStringUTF8(ret);
 }
 
 void zSettings::save(u8* ptr, cstr name) {
@@ -104,7 +104,7 @@ void zSettings::save(u8* ptr, cstr name) {
     if(file.open(pathCache + name, false, false)) {
         for(int i = 0 ; i < defs.size(); i++) {
             auto opt(&defs[i]);
-            auto cat(opt->name.startsWith('['));
+            auto cat(opt->name.startsWith("["));
             file.writeString(opt->name, cat);
             if(!cat) {
                 file.writeString("=", false);
@@ -122,20 +122,20 @@ cstr zSettings::mruOpen(int index, cstr pth, bool error) {
         mrus[9] = "Empty";
         return "";
     }
-    zString title(z_strlen(pth) > 0 ? pth : mrus[index].str());
+    zStringUTF8 title(z_strlen(pth) > 0 ? pth : mrus[index].str());
     for(pos = 0; pos < 9; pos++)
         if(mrus[pos] == title) break;
     for(; pos > 0; pos--) mrus[pos] = mrus[pos - 1];
     return mrus[0] = title;
 }
 
-zString zSettings::mruDecorate(int index) const {
-    zString mru(mrus[index]);
+zStringUTF8 zSettings::mruDecorate(int index) const {
+    zStringUTF8 mru(mrus[index]);
     mru = mru.substrAfterLast("\\", mru);
     return mru.substrAfterLast("/", mru);
 }
 
-zString zSettings::makePath(cstr pth, int type) const {
+zStringUTF8 zSettings::makePath(cstr pth, int type) const {
     switch(type) {
         case FOLDER_CACHE:
             return pathCache + pth;

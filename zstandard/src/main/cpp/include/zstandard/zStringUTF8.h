@@ -69,6 +69,7 @@ public:
     bool isNotEmpty() const { return count() != 0; }
     bool compare(cstr str) const;
     // модификация
+    const zStringUTF8& appendNotEmpty(cstr ch) { if(isNotEmpty()) *this += ch; return *this; }
     const zStringUTF8& slash(cstr ch = "/") { if(!endsWith(ch)) *this += ch; return *this; }
     const zStringUTF8& lower();
     const zStringUTF8& upper();

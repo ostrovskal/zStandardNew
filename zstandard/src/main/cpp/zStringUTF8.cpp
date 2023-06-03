@@ -5,12 +5,10 @@
 #include "zstandard/zstandard.h"
 #include "zstandard/zStringUTF8.h"
 
-static cstr hex("0123456789ABCDEF-");
-
 char* zStringUTF8::alloc(i32 _count, i32 _size, bool is_copy) {
     auto _old(buffer());
     if(_size) {
-        auto size(_size + 4);
+        auto size(_size + 64);
         if(size > _str_buffer.size_buf) {
             // выделим память под новый буфер
             auto _new(new char[size]);

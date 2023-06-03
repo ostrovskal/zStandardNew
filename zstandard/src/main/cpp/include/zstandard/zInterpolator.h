@@ -19,7 +19,7 @@ public:
     // деструктор
     ~zInterpolator() { clear(); }
     // инициализация
-    void init(float _start, bool _loop) { start = _start; loop = _loop; type = NONE; }
+    void init(float _start, bool _loop) { clear(); start = _start; loop = _loop; type = NONE; }
     // добавление анимации
     void add(float _dest, INTERPOLATOR_TYPE _type, int _frames) { params += { _type, _dest, _frames }; }
     // выполнить кадр анимации

@@ -33,14 +33,13 @@ public:
 		// вернуть количество аттрибутов
 		int getCountAttrs() const { return attrs.size(); }
 		// добавить тэг
-		const zNode* addTag(cstr _name, cstr _value) {
+		zNode* addTag(cstr _name, cstr _value) {
 			return new zNode(_name, _value, this);
 		}
 		// добавить атрибут
-		const zAttr* addAttr(cstr _name, cstr _value) {
+		zAttr* addAttr(cstr _name, cstr _value) {
 			auto a(new zAttr(_name, _value));
-			attrs += a;
-			return a;
+			attrs += a; return a;
 		}
 		// вернуть тег по индексу
 		const zNode* getTag(int idx) const {
@@ -63,7 +62,7 @@ public:
 		// вернуть значение атрибута по имени
 		zStringUTF8 getAttrVal(cstr _name, cstr def) const {
 			auto idx(attrs.indexOf<cstr>(_name));
-			return idx == -1 ? zString(def) : attrs[idx]->value;
+			return idx == -1 ? zStringUTF8(def) : attrs[idx]->value;
 		}
 		// вернуть имя тега
 		const zStringUTF8& getName() const { return name; }
@@ -81,6 +80,8 @@ public:
 		// родительская нода
 		zNode* parent{nullptr};
 	};
+	// конструктор по умолчанию
+	zXml() { }
 	// конструктор из памяти
 	zXml(u8* ptr, i32 size);
 	// конструктор из файла
@@ -90,10 +91,10 @@ public:
 	// закрыть
 	void close();
 	// вставить корневой тэг
-	const zNode* insertRoot(cstr _name) {
+	zNode* insertRoot(cstr _name) {
 		auto n(new zNode());
-		n->name = _name; n->children += root;
-		root->parent = n;
+		n->name = _name;
+		if(root) { n->children += root; root->parent = n; }
 		root = n; return n;
 	}
 	// открыть

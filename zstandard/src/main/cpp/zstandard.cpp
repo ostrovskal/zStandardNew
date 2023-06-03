@@ -495,7 +495,7 @@ void z_checkGlError() {
     ILOG("OpenGL ES error %X(%s)", err, str);
 }
 
-void z_tgaSaveFile(cstr path, u8* ptr, int w, int h, int comp) {
+bool z_tgaSaveFile(cstr path, u8* ptr, int w, int h, int comp) {
     HEADER_TGA head{ 0, 0, 2, 0, 0, 0, 0, 0, (u16)w, (u16)h, 32, 40 };
     zFile f;
     if(f.open(path, false)) {
@@ -516,5 +516,7 @@ void z_tgaSaveFile(cstr path, u8* ptr, int w, int h, int comp) {
         }
         f.write(dst, w * h * 4);
         delete [] dst;
+        return true;
     }
+    return false;
 }

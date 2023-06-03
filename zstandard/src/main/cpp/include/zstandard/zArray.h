@@ -127,13 +127,12 @@ protected:
 			max_count = (count + _count + 8);
 			// выделяем блок
 			T* ptr((T*)new u8[max_count * sizeof(T)]);
+			memset(ptr, 0, max_count * sizeof(T));
 			// копируем старые данные, если есть
 			if(data) {
 				memcpy(ptr, data, count * sizeof(T));
 				delete (u8*)data;
 			}
-			// инициализируем новые
-			for(auto i = count; i < max_count; i++) ::new((void*)(ptr + i)) T();
 			data = ptr;
 		}
 	}

@@ -96,7 +96,7 @@ inline int z_charUTF8(cstr _str, i32* length = nullptr) {
 
 // определение пустой строки
 inline bool z_isUTF8(cstr _str) {
-    return _str && z_charUTF8(_str);
+    return _str && *_str;
 }
 
 // вернуть адрес в строке по индексу
@@ -176,7 +176,7 @@ rti z_clipRect(crti& base, crti& rect);
 // проверка на разделитель
 bool z_delimiter(int c);
 // сохранение TGA файла
-void z_tgaSaveFile(cstr path, u8* ptr, int w, int h, int comp);
+bool z_tgaSaveFile(cstr path, u8* ptr, int w, int h, int comp);
 // строка ошибки OpenGL
 void z_checkGlError();
 

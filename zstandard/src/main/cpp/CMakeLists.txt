@@ -28,6 +28,7 @@ add_library(zstandard STATIC
         zInterpolator.cpp
         gl3stub.cpp
         zStringUTF8.cpp
+        zTga.cpp
 )
 
 target_include_directories(zstandard PUBLIC include)
