@@ -204,9 +204,7 @@ bool zXml::decode() {
 }
 
 void zXml::_save(zNode* n, zFile* f, int tab) {
-	zStringUTF8 tb('\t', tab);
-	zStringUTF8 t = tb + "<";
-	t += n->name;
+	zStringUTF8 tb('\t', tab), t(tb + "<" + n->name);
 	// attrs
 	for(auto a : n->attrs) {
 		zStringUTF8 an(a->ns);
@@ -215,15 +213,9 @@ void zXml::_save(zNode* n, zFile* f, int tab) {
 		t += " " + an + "=\"" + a->value.replaceAmp(false) + "\"";
 	}
 	bool isClose(n->children.isNotEmpty() || n->value.isNotEmpty());
-	bool isCapt(n->name[0] == '?');
-	if(isCapt) {
-		t += "?>";
-	} else {
-		if(isClose) t += ">"; else t += "/>\r\n";
-		t += n->value.replaceAmp(false);
-	}
+	if(isClose) t += ">"; else t += " />\r\n";
+	t += n->value.replaceAmp(false);
 	f->writeString(t, n->value.isEmpty());
-	if(isCapt) return;
 	for(auto _n : n->children) _save(_n, f, tab + 1);
 	if(isClose) {
 		t = (n->value.isEmpty() ? tb : zStringUTF8("")) + "</" + n->name + ">";
