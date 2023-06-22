@@ -308,3 +308,13 @@ bool zStringUTF8::compare(cstr str) const {
     return true;
 }
 
+zStringUTF8 z_fmtUTF8(cstr fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    zStringUTF8 tmp('\0', vsnprintf(nullptr, 0, fmt, args));
+    va_end(args); va_start(args, fmt);
+    vsnprintf(tmp.buffer(), tmp.size() + 1, fmt, args);
+    va_end(args);
+    return tmp;
+}
+

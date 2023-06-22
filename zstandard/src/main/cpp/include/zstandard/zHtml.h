@@ -30,7 +30,7 @@ protected:
     // комментарий
     bool skipComment();
     // следующий символ
-    int next();
+    int next(int* len);
     // найти значение атрибута по его имени
     zStringUTF8 findValueAttribute(cstr name) const;
     // получить имя

@@ -446,6 +446,7 @@ int z_encodeUTF8(u32 ch);
 
 zStringUTF8 z_cp1251ToUtf8(const zString& src);
 zString z_utf8ToCp1251(const zStringUTF8& src);
+
 template<typename T> void z_logBuffer(const zStringUTF8& tips, const T& elem, int size = 128, bool hex = false, bool show = false) {
     static int count(0);
     static T* buf(nullptr);
@@ -455,9 +456,9 @@ template<typename T> void z_logBuffer(const zStringUTF8& tips, const T& elem, in
         zStringUTF8 tmp(tips);
         for(int i = 0 ; i < count; i++) {
             tmp.appendNotEmpty(", ");
-            tmp += z_ntos(&buf[i], hex ? RADIX_HEX : RADIX_DEC, !hex, sizeof(T));
+            tmp += z_ntos(&buf[i], hex, !hex, sizeof(T));
         }
-        DLOG(tmp);
+        DLOG(tmp.str());
         count = 0;
     }
 }

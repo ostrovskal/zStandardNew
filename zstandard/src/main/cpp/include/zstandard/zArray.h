@@ -37,6 +37,14 @@ public:
 	void clear() noexcept { erase(0, count, true); free(); }
 	// установить размер
 	void resize(int _count) noexcept { clear(); alloc(_count); count = _count; }
+	// перечисление элементов
+	void enumerate(bool reverse, const std::function<bool(int, T&)>& f) {
+		if(reverse) {
+			for(int i = count - 1; i >= 0; i--) if(f(i, at(i))) break;
+		} else {
+			for(int i = 0; i < count; i++) if(f(i, at(i))) break;
+		}
+	}
 	// вернуть признак заполненного массива
 	bool isNotEmpty() const { return count > 0; }
 	// вернуть признак пустого массива

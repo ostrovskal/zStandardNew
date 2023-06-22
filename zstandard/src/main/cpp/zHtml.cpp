@@ -5,13 +5,13 @@
 #include "zstandard/zstandard.h"
 #include "zstandard/zHtml.h"
 
-int zHtml::next() {
-    int ch(0);
+int zHtml::next(int* len) {
+    int ch(0), ll;
     if(start < end) {
-        ch = z_charUTF8(start);
-        start += z_charLengthUTF8(start);
+        ch = z_charUTF8(start, &ll);
         if(ch == '\n') line++;
     }
+    if(len) *len = ll; else start += ll;
     return ch;
 }
 
@@ -24,20 +24,18 @@ zStringUTF8 zHtml::decode(u8* ptr, i32 size, const std::function<bool (cstr, boo
     line = 1; stkHtml.trim();
     start = stkHtml.buffer(); html = start;
     end = start + stkHtml.size();
-    z_skip_spc(&start, line);
-    text.empty();
-    if(!parser("", _parser)) text.empty();
+    z_skip_spc(&start, line); text.empty();
+    if(!parser(text, _parser)) text.empty();
     return text;
 }
 
 zStringUTF8 zHtml::getValue(char delim) {
-    z_skip_spc(&start, line);
-    start += (*start == '\"');
+    int len; start += (*start == '\"');
     auto _s(start); int count(0);
     // определить конец значения
     while(start < end) {
-        if(next() == delim) break;
-        count++;
+        if(next(&len) == delim) break;
+        start += len; count++;
     }
     zStringUTF8 v(_s, count);
     start += (*start == '\"');
@@ -46,7 +44,7 @@ zStringUTF8 zHtml::getValue(char delim) {
 
 zStringUTF8 zHtml::getName() {
     z_skip_spc(&start, line); auto _s(start); int count(0);
-    while(start < end && !z_delimiter(*start)) next(), count++;
+    while(start < end && !z_delimiter(*start)) next(nullptr), count++;
     return { _s, count };
 }
 
@@ -54,18 +52,17 @@ bool zHtml::skipComment() {
     start += 3;
     while((start + 3) < end) {
         if(strncmp(start, "-->", 3) == 0) { start += 3; return true; }
-        next();
+        next(nullptr);
     }
     return false;
 }
 
 bool zHtml::parser(const zStringUTF8& _tag, const std::function<bool (cstr, bool, zHtml*)>& _parser) {
     while(start < end) {
-        z_skip_spc(&start, line);
         // текст до начала тега
         text += getValue('<');
         if(start >= end) break;
-        auto ch(next());
+        auto ch(next(nullptr));
         if(ch == '<') {
             // комментарий?
             if(((start + 3) < end) && *start == '!' && start[1] == '-' && start[2] == '-') {
@@ -73,8 +70,7 @@ bool zHtml::parser(const zStringUTF8& _tag, const std::function<bool (cstr, bool
                 return false;
             }
             // может это конец тега ?
-            auto isEndTag(*start == '/');
-            start += isEndTag;
+            auto isEndTag(*start == '/'); start += isEndTag;
             // берем имя тега
             auto tag(getName());
             if(tag.isEmpty() || tag[0] <= '9') {
@@ -98,23 +94,19 @@ bool zHtml::parser(const zStringUTF8& _tag, const std::function<bool (cstr, bool
                     if(attrName.isNotEmpty()) {
                         // берем значение атрибута
                         z_skip_spc(&start, line);
-                        if(next() != '=') return false;
-                        attrs += attrName;
+                        if(next(nullptr) != '=') return false;
+                        attrs += attrName; z_skip_spc(&start, line);
                         attrs += getValue('\"');
                     } else {
                         // конец тега >, />
                         isEndTag = (*start == '/');
-                        start += isEndTag;
-                        isFinish = isEndTag;
+                        start += isEndTag; isFinish = isEndTag;
                         break;
                     }
                 }
             }
             // конец тега
-            if(next() != '>') {
-                // недопустимое завершение тега
-                return false;
-            }
+            if(next(nullptr) != '>') return false;
             if(isEndTag && !isFinish) {
                 // проверить - конец тега/начало совпадают?
                 if(tag != _tag) {
@@ -143,17 +135,14 @@ bool zHtml::parser(const zStringUTF8& _tag, const std::function<bool (cstr, bool
 zStringUTF8 zHtml::findValueAttribute(cstr name) const {
     zStringUTF8 value;
     for(int i = 0 ; i < attrs.size(); i += 2) {
-        if(attrs[i] == name) {
-            value = attrs[i + 1];
-            break;
-        }
+        if(attrs[i] == name) { value = attrs[i + 1]; break; }
     }
     return value;
 }
 
 zStringUTF8 zHtml::getStringAttr(cstr name, cstr def) {
     auto ret(findValueAttribute(name));
-    return ret.isNotEmpty() ? ret : zString(def);
+    return ret.isNotEmpty() ? ret : zStringUTF8(def);
 }
 
 int zHtml::getIntegerAttr(cstr name, int radix, int def) {

@@ -115,7 +115,7 @@ protected:
         // длина символов
         i32 length{0};
         // размер буфера
-        i32 size_buf{0};
+        i32 size_buf{Z_BUFFER_LENGTH};
     };
 #pragma pack(pop)
     static zStringUTF8 add(cstr str1, i32 _count1, cstr str2, i32 _count2);
@@ -136,3 +136,6 @@ private:
 };
 
 using czs = const zStringUTF8;
+
+// форматирование
+zStringUTF8 z_fmtUTF8(cstr fmt, ...);

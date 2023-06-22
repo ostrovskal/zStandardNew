@@ -168,7 +168,7 @@ protected:
         // длина данных
         i32 len{0};
         // длина буфера
-        i32 len_buf{0};
+        i32 len_buf{Z_BUFFER_LENGTH};
     };
 #pragma pack(pop)
     static zString add(cstr wcs1, int len1, cstr wcs2, int len2);
