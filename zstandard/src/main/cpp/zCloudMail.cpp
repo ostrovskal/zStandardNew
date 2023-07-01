@@ -18,7 +18,7 @@ zStringUTF8 zCloudMail::getUrl(czs& type) {
     return link;
 }
 
-bool zCloudMail::auth(czs& client_id, czs& client_secret) {
+bool zCloudMail::auth(cstr client_id, cstr client_secret) {
     req.setAccept("text/html,application/xhtml + xml,application/xml; q=0.9,*/*;q=0.8");
     req.setAgent("Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.72 Safari/537.36");
     req.setReferer("https://cloud.mail.ru/home/");
@@ -26,7 +26,7 @@ bool zCloudMail::auth(czs& client_id, czs& client_secret) {
     auto urn(z_fmtUTF8("Login=%s&Domain=mail.ru&Password=%s&new_auth_form=1&FailPage=", login.str(), password.str()));
     if(req.requestPost("https://auth.mail.ru/cgi-bin/auth?from=splash", urn)) {
         // получаем cookie sdc
-        if(req.requestGet("https://auth.mail.ru/sdc?from=https://cloud.mail.ru/home")) {
+        if(req.requestGet("https://auth.mail.ru/sdc?from=https://cloud.mail.ru/home", true)) {
             // получаем токен
             req.setAccept("application/json");
             req.requestGet(host + "tokens/csrf");
@@ -42,7 +42,7 @@ bool zCloudMail::auth(czs& client_id, czs& client_secret) {
 }
 
 bool zCloudMail::add(czs& path, czs& hash, int size) {
-    auto hasFile(hash && size);
+    auto hasFile(hash.isNotEmpty() && size);
     auto part(hasFile ? z_fmtUTF8("&hash=%s&size=%i", hash.str(), size) : zStringUTF8(""));
     auto urn(z_fmtUTF8("api=2&conflict=strict&home=%s&email=%s&x-email=%s%s", path.str(), getEmail().str(), getEmail().str(), part.str()));
     auto url(z_fmtUTF8("%s%s/add", host.str(), hasFile ? "file" : "folder"));
@@ -65,7 +65,7 @@ bool zCloudMail::upload(czs& dstPath, czs& srcPath) {
         req.requestPut(url, fd, size);
         closef(fd);
         if(req.getStatus() == zHttpRequest::HTTP_CREATED)
-            return add(dstPath, req.response().str, size);
+            return add(dstPath, req.response()->str, size);
     }
     return false;
 }

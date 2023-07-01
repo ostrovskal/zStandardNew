@@ -5,9 +5,14 @@
 #include "zstandard/zstandard.h"
 #include "zstandard/zCloud.h"
 
+void zHttpRequest::DynBuffer::clear() {
+    grow = size = 0;
+    SAFE_DELETE(ptr);
+}
+
 void zHttpRequest::DynBuffer::realloc(int len, u8* data) {
     auto nsize(size + len);
-    if(grow < nsize) {
+    if(nsize >= grow) {
         grow = nsize * 2;
         auto tmp(new u8[grow]);
         memset(tmp, 0, grow);
@@ -31,7 +36,10 @@ static size_t reader(char* bufptr, size_t size, size_t nitems, zHttpRequest::Dyn
 
 static int writer(char* data, size_t size, size_t nmemb, zHttpRequest::DynBuffer* resp) {
     int result(0);
-    if(resp) resp->realloc(result = (int)(size * nmemb), (u8*)data);
+    if(resp) {
+        result = (int)(size * nmemb);
+        resp->realloc(result, (u8*)data);
+    }
     return result;
 }
 
@@ -67,12 +75,12 @@ void zHttpRequest::setProxy(czs& url, czs& login_pwd) {
 void zHttpRequest::changeHeaders(czs& what, czs& value) {
     struct curl_slist* tmp(nullptr), *each(hs);
     while(each) {
-        auto origin(each->data), data((char*)z_ptrUTF8(origin, z_strstrUTF8(origin, what)));
-        if(data != origin) tmp = curl_slist_append(tmp, origin);
+        auto origin(each->data);
+        if(z_strstrUTF8(origin, what) != 0) tmp = curl_slist_append(tmp, origin);
         each = each->next;
     }
     curl_slist_free_all(hs); hs = tmp;
-    hs = curl_slist_append(hs, zStringUTF8(what) + value);
+    hs = curl_slist_append(hs, what + value);
 }
 
 void zHttpRequest::setCustomHeader(czs &_header, czs &_value, bool _reset) {
@@ -89,11 +97,11 @@ void zHttpRequest::setCert(czs& cert) const {
     }
 }
 
-bool zHttpRequest::exec(czs& url, bool body) {
+bool zHttpRequest::exec(czs& url, bool nobody) {
     CURLcode code(CURL_LAST);
     resp.clear(); header.clear();
     if(curl) {
-        curl_easy_setopt(curl, CURLOPT_NOBODY, body);
+        curl_easy_setopt(curl, CURLOPT_NOBODY, nobody);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
         curl_easy_setopt(curl, CURLOPT_URL, url.str());
         code = curl_easy_perform(curl);
@@ -101,15 +109,15 @@ bool zHttpRequest::exec(czs& url, bool body) {
     return code == CURLE_OK;
 }
 
-bool zHttpRequest::requestPost(czs& url, czs& fields, bool body) {
+bool zHttpRequest::requestPost(czs& url, czs& fields, bool nobody) {
     curl_easy_setopt(curl, CURLOPT_POST, 1);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, fields.str());
-    return exec(url, body);
+    return exec(url, nobody);
 }
 
-bool zHttpRequest::requestGet(czs& url, bool body) {
+bool zHttpRequest::requestGet(czs& url, bool nobody) {
     curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
-    return exec(url, body);
+    return exec(url, nobody);
 }
 
 bool zHttpRequest::requestPut(czs& url, int fd, int size) {

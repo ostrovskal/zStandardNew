@@ -6,7 +6,7 @@ public:
     enum JType { _str, _digit, _bool, _array, _object };
     struct Node {
         Node() { }
-        Node(Node* p, cstr k, cstr v, JType t) : key(k), val(v), tp{ t } { if(p) p->child += this; }
+        Node(Node* p, czs& k, czs& v, JType t) : key(k), val(v), tp(t) { if(p) p->child += this; }
         bool operator == (cstr n) const { return key == n; }
         // проверить на соответствие типа
         bool isType(JType t) const { return tp == t; }
@@ -19,13 +19,13 @@ public:
         // вернуть булево
         bool boolean() const { return val == "true"; }
         // вернуть строку
-        const zStringUTF8& string() const { return val; }
+        zStringUTF8 string() const { return val; }
         // ключь
-        zStringUTF8 key{ "" };
+        zStringUTF8 key{""};
         // значение
-        zStringUTF8 val{ "" };
+        zStringUTF8 val{""};
         // тип
-        JType tp{ _str };
+        JType tp{_str};
         // массив дочерних
         zArray<Node*> child;
     };
@@ -56,15 +56,15 @@ protected:
     // парсер
     bool parse(Node* p, JType jt, int lev);
     // массив для чисел
-    char digBuf[128]{};
+    char digBuf[512]{};
     // текущая линия/признак ошибки
-    int line{ 1 }, error{ 1 };
+    int line{1}, error{1};
     // текущая позиция/конечная позиция/позиция литерала
-    char* jcur{ nullptr }, *jend{ nullptr }, *lit{ nullptr };
+    char* jcur{nullptr}, *jend{nullptr}, *lit{nullptr};
     // тип литерала
-    JType _jt{ _str };
+    JType _jt{_str};
     // корневой элемент
-    Node* root{ nullptr };
+    Node* root{nullptr};
     // пустышка
     static Node dummy;
 };

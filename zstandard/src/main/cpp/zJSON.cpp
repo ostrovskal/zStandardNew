@@ -6,87 +6,80 @@ zJSON::Node zJSON::dummy;
 static char* brakket((char*)"()");
 
 int zJSON::jnext() {
-    int ch(0);
+    int ch(0), ll(0);
     if(jcur < jend) {
-        ch = z_charUTF8(jcur);
-        jcur += z_charLengthUTF8(jcur);
+        ch = z_charUTF8(jcur, &ll); jcur += ll;
 		if(ch == '\n') line++;
     }
     return ch;
 }
 
 bool zJSON::init(u8* ptr, int size) {
-	jcur = (char*)ptr; jend = (jcur + size);
+	line = 1; jcur = (char*)ptr; jend = (jcur + size);
 	z_skip_spc(&jcur, line);
 	error = ((*jcur == '{' && parse(nullptr, _object, 1)) ? 0 : (int)(jcur - (char*)ptr) - 1);
 	return error == 0;
 }
 
 bool zJSON::jliteral() {
-    bool _error;
-	auto str(*jcur == '\"');
-	jcur += str; lit = jcur;
-	auto cur(jcur);
+    bool _error; auto str(*jcur == '\"');
+	jcur += str;
 	if(str) {
-		_jt = _str;
+		auto tmp(digBuf); _jt = _str;
 		while(true) {
 			auto ch(jnext());
 			if((_error = (ch == 0))) break;
-			if(ch == '\\') z_escape(&cur, &jcur);
+			if(ch == '\\') z_escape(&tmp, &jcur);
 			else {
 				if(ch == '\"') break;
                 auto sz(z_charLengthUTF8((cstr)&ch));
-                memcpy(cur, &ch, sz); cur += sz;
+                memcpy(tmp, &ch, sz); tmp += sz;
 			}
 		}
-		*(jcur - 1) = 0;
+		*tmp = 0;
 	} else {
 		// bool/integer/real
-		auto tmp(jcur); _jt = _bool;
+		_jt = _bool; auto tmp(jcur);
 		if(strncmp(tmp, "false", 5) == 0) tmp += 5;
 		else if(strncmp(tmp, "true", 4) == 0) tmp += 4;
-		else {
-			_jt = _digit;
-			z_ston<double>(jcur, RADIX_DBL, &tmp);
-		}
-		auto len(tmp - jcur); memcpy(digBuf, jcur, len);
-		_error = (jcur == tmp); jcur = tmp; lit = digBuf;
-		digBuf[len] = 0;
+		else { _jt = _digit; z_ston<double>(jcur, RADIX_DBL, &tmp); }
+		_error = (jcur == tmp); auto len((int)(tmp - jcur));
+		memcpy(digBuf, jcur, len); digBuf[len] = 0; jcur = tmp;
 	}
+	lit = digBuf;
 	return _error;
 }
 
 bool zJSON::parse(zJSON::Node* p, zJSON::JType jt, int lev) {
-	char* key(nullptr), * val(key); bool colon(jt == _array || p == nullptr);
+	zStringUTF8 key, val; bool colon(jt == _array || p == nullptr);
 	while(true) {
 		z_skip_spc(&jcur, line);
 		auto ch(jnext());
 		if(ch == '\"' || isalnum(ch) || ch == '.') {
-			jcur--;
-			if(jliteral()) break;
-			if(!key && !colon && _jt == _str) key = lit;
-			else if(!val) {
+			jcur--; if(jliteral()) break;
+			if(key.isEmpty() && !colon && _jt == _str) key = lit;
+			else if(val.isEmpty()) {
 				if(!colon) break;
 				new Node(p, key, val = lit, _jt);
 			} else break;
 		} else if(ch == ':' && !colon) {
-			if(!(colon = key != nullptr)) break;
+			if(!(colon = key.isNotEmpty())) break;
 		} else if(colon) {
 			if(ch == ',') { 
-				if(!p || !val) break;
-				key = val = nullptr; colon = jt == _array;
+				if(!p || val.isEmpty()) break;
+				key.empty(); val.empty(); colon = (jt == _array);
 			} else if(ch == ']' || ch == '}') {
 				return true;
-			} else if(!val && (ch == '[' || ch == '{')) {
+			} else if(val.isEmpty() && (ch == '[' || ch == '{')) {
 				val = brakket;
 				auto n(new Node(p, key, val, ch == '[' ? _array : _object));
 				if(!parse(n, n->tp, lev + 1)) break;
 				if(!p) root = n;
 			} else {
-				return !(key || val != brakket);
+				return !(key.isNotEmpty() || val != brakket);
 			}
 		} else {
-			colon = ch == '[' || ch == '{';
+			colon = (ch == '[' || ch == '{');
 			if(!colon) break;
 			jcur--;
 		}

@@ -31,7 +31,6 @@ add_library(zstandard STATIC
         zTga.cpp
         zCloudMail.cpp
         zCloudYandex.cpp
-        zOAuth.cpp
         zHttpRequest.cpp
 )
 
