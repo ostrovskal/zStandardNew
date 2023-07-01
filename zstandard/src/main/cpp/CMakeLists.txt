@@ -29,6 +29,10 @@ add_library(zstandard STATIC
         gl3stub.cpp
         zStringUTF8.cpp
         zTga.cpp
+        zCloudMail.cpp
+        zCloudYandex.cpp
+        zOAuth.cpp
+        zHttpRequest.cpp
 )
 
 target_include_directories(zstandard PUBLIC include)

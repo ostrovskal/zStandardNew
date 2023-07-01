@@ -48,6 +48,8 @@
     extern thread_local JNIEnv* jenv;
 #endif
 
+#include <curl2/curl.h>
+
 using u64       = uint64_t;
 using i64       = int64_t;
 using u32       = uint32_t;

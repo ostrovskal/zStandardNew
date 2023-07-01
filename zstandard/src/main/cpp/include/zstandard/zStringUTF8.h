@@ -139,3 +139,5 @@ using czs = const zStringUTF8;
 
 // форматирование
 zStringUTF8 z_fmtUTF8(cstr fmt, ...);
+zStringUTF8 z_urlEncodeUTF8(cstr _buf);
+zStringUTF8 z_urlDecodeUTF8(cstr buf);
