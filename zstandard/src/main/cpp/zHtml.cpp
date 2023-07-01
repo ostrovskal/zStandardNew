@@ -6,7 +6,7 @@
 #include "zstandard/zHtml.h"
 
 int zHtml::next(int* len) {
-    int ch(0), ll;
+    int ch(0), ll(0);
     if(start < end) {
         ch = z_charUTF8(start, &ll);
         if(ch == '\n') line++;
