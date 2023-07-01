@@ -32,13 +32,13 @@ zSettings::zSettings(cstr root, cstr* opts) {
 void zSettings::init(u8* ptr, cstr name) {
     zFile fr; auto opts(defs);
     if(fr.open(pathCache + name, true, false)) {
-        zString str;
+        zStringUTF8 str;
         while((str = fr.readString()).isNotEmpty()) {
-            auto opt(str.substrBefore('='));
+            auto opt(str.substrBefore("="));
             if(opt.isEmpty()) continue;
             str.trim();
             auto index(opts.indexOf<cstr>(opt));
-            if(index != -1) opts[index].value = str.substrAfter('=');
+            if(index != -1) opts[index].value = str.substrAfter("=");
         }
         fr.close();
     }
@@ -68,7 +68,7 @@ void zSettings::setOption(u8* ptr, const ZOPTION& opt) {
             break;
     }
 }
-
+	
 zStringUTF8 zSettings::getOption(const u8* ptr, int idx) {
     u32 n; int radix(RADIX_DEC); cstr ret;
     auto opt(defs[idx]); auto o(opt.offs);
@@ -140,7 +140,7 @@ zStringUTF8 zSettings::makePath(cstr pth, int type) const {
         case FOLDER_CACHE:
             return pathCache + pth;
         case FOLDER_ROOT:
-            return pathRoot + pth;
+            return pathRoot  + pth;
         case FOLDER_FILES:
             return pathFiles + pth;
         default:

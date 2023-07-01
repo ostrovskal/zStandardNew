@@ -1,6 +1,8 @@
 ﻿
 #pragma once
 
+#include <functional>
+
 template <typename T, bool> struct release_node { static void release(const T& t) { /*static_assert(false, "release_node invalid!");*/ } };
 template <typename T> struct release_node < T, false > { static void release(const T& t) { t.~T(); } static T dummy() { return T(); } };
 template <typename T> struct release_node < T, true > { static void release(const T& t) { delete t; } static T dummy() { return nullptr; } };

@@ -130,7 +130,7 @@ protected:
     const zStringUTF8& make(cstr str, i32 _count);
     const zStringUTF8& changeRegister(cstr _search, cstr _replace) const;
     // вернуть размер при копировании строки
-    i32 sizeCopy(cstr ptr) const { return _str_buffer.size_buf - (i32)(ptr - str()); }
+    i32 sizeCopy(cstr ptr) const { return _str_buffer.size_buf - (i32)(ptr - str()) - 1; }
 private:
     STRING_BUFFER _str_buffer{};
 };
