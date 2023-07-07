@@ -4,9 +4,9 @@
 class zJSON {
 public:
     enum JType { _str, _digit, _bool, _array, _object };
-    struct Node {
-        Node() { }
-        Node(Node* p, czs& k, czs& v, JType t) : key(k), val(v), tp(t) { if(p) p->child += this; }
+    struct zNode {
+        zNode() { }
+        zNode(zNode* p, czs& k, czs& v, JType t) : key(k), val(v), tp(t) { if(p) p->child += this; }
         bool operator == (cstr n) const { return key == n; }
         // проверить на соответствие типа
         bool isType(JType t) const { return tp == t; }
@@ -27,34 +27,38 @@ public:
         // тип
         JType tp{_str};
         // массив дочерних
-        zArray<Node*> child;
+        zArray<zNode*> child;
     };
     zJSON() { }
     zJSON(u8* ptr, int size) { init(ptr, size); }
-    virtual ~zJSON() { delete root; root = nullptr; }
+    virtual ~zJSON() { clear(); }
     // признак валидности
     bool isValid() const { return error == 0; }
     // инициализация
     bool init(u8* ptr, int size);
+    // очистка
+    void clear() { SAFE_DELETE(root); }
     // сформировать строку
     zStringUTF8 save();
     // вернуть корень
-    const Node* getRoot() const { return root; }
+    const zNode* getRoot() const { return root; }
     // вернуть узел по индексу
-    const Node* getNode(int idx, const Node* node = nullptr) const;
+    const zNode* operator[](int idx) const { return getNode(idx); }
+    const zNode* getNode(int idx, const zNode* node = nullptr) const;
     // вернуть узел по имени
-    const Node* getNode(cstr name, const Node* node = nullptr) const;
+    const zNode* operator[](cstr name) const { return getNode(name); }
+    const zNode* getNode(cstr name, const zNode* node = nullptr) const;
     // вернуть узел из пути('/Name/_Index/_Index/Name/...')
-    const Node* getPath(cstr path, const Node* node = nullptr) const;
+    const zNode* getPath(cstr path, const zNode* node = nullptr) const;
     // добавить узел
-    Node* addNode(cstr key, cstr val, JType jt, Node* node = nullptr);
+    zNode* addNode(cstr key, cstr val, JType jt = _str, zNode* node = nullptr);
 protected:
     // получение литерала
     bool jliteral();
     // следующий символ
     int jnext();
     // парсер
-    bool parse(Node* p, JType jt, int lev);
+    bool parse(zNode* p, JType jt, int lev);
     // массив для чисел
     char digBuf[512]{};
     // текущая линия/признак ошибки
@@ -64,8 +68,8 @@ protected:
     // тип литерала
     JType _jt{_str};
     // корневой элемент
-    Node* root{nullptr};
+    zNode* root{nullptr};
     // пустышка
-    static Node dummy;
+    static zNode dummy;
 };
 

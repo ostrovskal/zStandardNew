@@ -2,7 +2,7 @@
 #include "zstandard/zstandard.h"
 #include "zstandard/zJSON.h"
 
-zJSON::Node zJSON::dummy;
+zJSON::zNode zJSON::dummy;
 static char* brakket((char*)"()");
 
 int zJSON::jnext() {
@@ -50,7 +50,7 @@ bool zJSON::jliteral() {
 	return _error;
 }
 
-bool zJSON::parse(zJSON::Node* p, zJSON::JType jt, int lev) {
+bool zJSON::parse(zJSON::zNode* p, zJSON::JType jt, int lev) {
 	zStringUTF8 key, val; bool colon(jt == _array || p == nullptr);
 	while(true) {
 		z_skip_spc(&jcur, line);
@@ -60,7 +60,7 @@ bool zJSON::parse(zJSON::Node* p, zJSON::JType jt, int lev) {
 			if(key.isEmpty() && !colon && _jt == _str) key = lit;
 			else if(val.isEmpty()) {
 				if(!colon) break;
-				new Node(p, key, val = lit, _jt);
+				new zNode(p, key, val = lit, _jt);
 			} else break;
 		} else if(ch == ':' && !colon) {
 			if(!(colon = key.isNotEmpty())) break;
@@ -72,7 +72,7 @@ bool zJSON::parse(zJSON::Node* p, zJSON::JType jt, int lev) {
 				return true;
 			} else if(val.isEmpty() && (ch == '[' || ch == '{')) {
 				val = brakket;
-				auto n(new Node(p, key, val, ch == '[' ? _array : _object));
+				auto n(new zNode(p, key, val, ch == '[' ? _array : _object));
 				if(!parse(n, n->tp, lev + 1)) break;
 				if(!p) root = n;
 			} else {
@@ -87,18 +87,18 @@ bool zJSON::parse(zJSON::Node* p, zJSON::JType jt, int lev) {
     return false;
 }
 
-const zJSON::Node* zJSON::getNode(int idx, const Node* node) const {
+const zJSON::zNode* zJSON::getNode(int idx, const zNode* node) const {
 	auto n(node ? node : root);
 	return idx < n->child.size() ? n->child[idx] : &dummy;
 }
 
-const zJSON::Node* zJSON::getNode(cstr name, const Node* node) const {
+const zJSON::zNode* zJSON::getNode(cstr name, const zNode* node) const {
 	auto n(node ? node : root);
 	auto idx(n->child.indexOf<cstr>(name));
 	return idx == -1 ? &dummy : n->child[idx];
 }
 
-const zJSON::Node* zJSON::getPath(cstr path, const Node* node) const {
+const zJSON::zNode* zJSON::getPath(cstr path, const zNode* node) const {
 	static char buffer[256];
 	auto n(node ? node : root);
 	auto epath(path + z_sizeUTF8(path));
@@ -114,12 +114,30 @@ const zJSON::Node* zJSON::getPath(cstr path, const Node* node) const {
 	return n;
 }
 
-zJSON::Node* zJSON::addNode(cstr key, cstr val, JType jt, Node* node) {
+zJSON::zNode* zJSON::addNode(cstr key, cstr val, JType jt, zNode* node) {
+	if(!root) root = new zNode(nullptr, "", "", zJSON::_object);
 	auto n(node ? node : root);
-	return new Node(n, key, val, jt);
+	return new zNode(n, key, val, jt);
+}
+
+static zStringUTF8 jsave(zJSON::zNode* n, zStringUTF8& s, bool _cont) {
+	if(n->key.isNotEmpty()) s += "\"" + n->key + "\": ";
+	switch(n->tp) {
+		case zJSON::_digit:
+		case zJSON::_bool: s += n->val; break;
+		case zJSON::_str: s += "\"" + n->val + "\""; break;
+		case zJSON::_object: s += "{"; break;
+		case zJSON::_array: s += "["; break;
+	}
+	auto count(n->count());
+	for(int i = 0; i < count; i++) s = jsave(n->child[i], s, (i + 1) < count);
+	if(n->tp == zJSON::_object) s += "}";
+	else if(n->tp == zJSON::_array) s += "]";
+	if(_cont) s += ", ";
+	return s;
 }
 
 zStringUTF8 zJSON::save() {
-	zStringUTF8 ret;
-	return ret;
+	zStringUTF8 s;
+	return jsave(root, s, false);
 }

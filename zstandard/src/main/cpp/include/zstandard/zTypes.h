@@ -1,11 +1,11 @@
 ﻿
 #pragma once
 
-float* z_vec3_mtx(float* v3, float* m);
-float* z_vec4_mtx(float* v4, float* m);
+float* z_vec3_mtx(const float* v3, const float* m);
+float* z_vec4_mtx(const float* v4, const float* m);
 float* z_mtx_vec3(float* m, float* v3);
 float* z_mtx_vec4(float* m, float* v4);
-float* z_mtx_mtx(float* m1, float* m2);
+float* z_mtx_mtx(const float* m1, const float* m2);
 
 // остаток от деления для вещественных чисел
 inline float z_modf(float x, float y) {
@@ -68,8 +68,8 @@ public:
 	const zColor& from(cstr s);
 	u8* state(u8* ptr, bool save);
 	union {
-		struct { float r, g, b, a; };
-		float vec[4]{};
+		struct { float r{0}, g{0}, b{0}, a{1}; };
+		float vec[4];
 	};
 	static zColor shadow;
 	static zColor red;
@@ -473,7 +473,7 @@ public:
 	// проверка на единичную матрицу
 	bool isIdent() const { return memcmp(&_identity, *this, 16) == 0; }
 	// специальные
-	float MINOR(const zMatrix& m, int r0, int r1, int r2, int c0, int c1, int c2) const;
+	static float MINOR(const zMatrix& m, int r0, int r1, int r2, int c0, int c1, int c2) ;
 	// определитель
 	float determinant() const;
 	zMatrix adjoint() const;
@@ -564,6 +564,6 @@ using cptf = const zPoint<float>;
 class zVertex2D {
 public:
 	zVertex2D() {}
-	float x{0.0f}, y{0.0f};
+	float x{0.0f}, y{0.0f}, z{0.0f};
 	float u{0.0f}, v{0.0f};
 };

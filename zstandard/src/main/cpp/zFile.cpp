@@ -189,7 +189,7 @@ int zFile::length() const {
     if(hf > 0) {
         struct stat st{};
         fstat(hf, &st);
-        return (int)st.st_size - tell();
+        return (int)st.st_size;
     }
     return (hz ? (int)zinfo.usize : 0);
 }

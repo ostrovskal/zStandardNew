@@ -60,7 +60,7 @@ public:
     // вернуть дескриптор
     int getFd() const { return hf; }
     // вернуть путь
-    cstr pth() const { return path; }
+    czs& pth() const { return path; }
     // найти
     static zArray<zFileInfo> find(cstr path, cstr _msk);
     // переименование/перемещение
@@ -70,6 +70,6 @@ public:
 protected:
     int		hf{0};
     HZIP* 	hz{nullptr};
-    zString path{};
+    zStringUTF8 path{};
 };
 

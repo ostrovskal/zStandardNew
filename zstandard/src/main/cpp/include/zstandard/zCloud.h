@@ -4,90 +4,34 @@
 
 #pragma once
 
-#include "zJSON.h"
-
-class zHttpRequest {
-public:
-    enum HttpCode { HTTP_CONTINUE = 100, HTTP_OK = 200, HTTP_CREATED = 201, HTTP_ACCEPTER = 202, HTTP_BAD_REQUEST = 400,
-        HTTP_FORBIDDEN = 403, HTTP_INTERNAL_ERROR = 500 };
-    struct DynBuffer {
-        ~DynBuffer() { clear(); }
-        void clear();
-        void realloc(int size, u8* data);
-        // дескриптор файла для аплоада
-        int fd{0};
-        // текущий размер/размер буфера
-        int size{0}, grow{0};
-        // указатель на данные
-        union {
-            u8* ptr{nullptr};
-            char* str;
-        };
-    };
-    // конструктор
-    zHttpRequest(bool follow_location, bool verbose = false);
-    // деструктор
-    virtual ~zHttpRequest() { close(); }
-    void close();
-    void setProxy(czs& url, czs& login_pwd);
-    void setContentType(czs& content) { changeHeaders("Content-Type: ", content); }
-    void setAccept(czs& accept) { changeHeaders("Accept: ", accept); }
-    void setContentLength(int size) { changeHeaders("Content-Length: ", z_ntos(&size, RADIX_DEC, false)); }
-    void setAgent(czs& agent) const { if(curl) curl_easy_setopt(curl, CURLOPT_USERAGENT, agent.str()); }
-    void setReferer(czs& refer) const { if(curl) curl_easy_setopt(curl, CURLOPT_REFERER, refer.str()); }
-    void setCookieList(czs& cookie) const { if(curl) curl_easy_setopt(curl, CURLOPT_COOKIE, cookie.str()); }
-    void setCustomHeader(czs& header, czs& value, bool reset = false);
-    void setCert(czs& cert) const;
-    bool requestPost(czs& url, czs& fields, bool nobody = false);
-    bool requestGet(czs& url, bool nobody = false);
-    bool requestPut(czs& url, int fd, int size);
-    bool requestCustom(czs& name, czs& url);
-    int getStatus() const;
-    zStringUTF8 getHeaders(bool out) const;
-    zStringUTF8 getCookieList() const;
-    zStringUTF8 getRedirect() const;
-    const DynBuffer* response() const { return &resp; }
-protected:
-    // применить заголовок
-    void changeHeaders(czs& what, czs& value);
-    // выполнить запрос
-    bool exec(czs& url, bool body);
-    // библиотека
-    CURL* curl{nullptr};
-    // буфер ошибок
-    char errorBuffer[CURL_ERROR_SIZE]{};
-    // заголовки
-    struct curl_slist* hs{nullptr};
-    // буферы для ответа/загрузки/заголовков
-    DynBuffer resp, upload, header;
-};
+#include "zHttpRequest.h"
 
 class zCloud {
 public:
     struct FileInfo {
         FileInfo() { }
-        FileInfo(const zStringUTF8& p, int s, int r, bool f) : size(s), rev(r), folder(f), path(p) { }
-        // размер/ревизия
-        int size{0}, rev{0};
+        FileInfo(czs& p, czs& e, int s, bool f) : size(s), ext(e), folder(f), path(p) { }
+        // размер
+        int size{0};
         // признак папки
         bool folder{false};
-        // полный путь
-        zStringUTF8 path;
+        // полный путь/расширение
+        zStringUTF8 path, ext;
     };
     // конструктор
-    zCloud(cstr _host, cstr _login, cstr _password) : login(_login), password(_password), host(_host) { }
+    zCloud(cstr _host, cstr _login, cstr _password) : login(_login), password(_password), host(_host), js(req.json()) { }
     // деструктор
     virtual ~zCloud() { req.close(); }
     // закрыть соединение
     virtual void close() { req.close(); }
     // авторизация
-    virtual bool auth(cstr client_id, cstr client_secret) = 0;
+    virtual bool auth(cstr client_id, cstr client_secret, cstr token) = 0;
     // создание папки
     virtual bool addFolder(czs& path) = 0;
     // загрузка файла
     virtual bool upload(czs& dstPath, czs& srcPath) = 0;
     // скачивание файла/папки
-    virtual bool download(zStringUTF8 source, zStringUTF8 dest, int delim) = 0;
+    virtual bool download(zStringUTF8 source, zStringUTF8 dest) = 0;
     // удаление файла
     virtual bool remove(czs& path) = 0;
     // переименование файла/папки
@@ -97,9 +41,11 @@ public:
     // публикация
     virtual zStringUTF8 publish(czs& path, bool remove) = 0;
     // получение списка файлов/папок
-    virtual zArray<FileInfo> getFiles(czs& path, czs& meta) = 0;
+    virtual zArray<FileInfo> getFiles(czs& path) = 0;
     // вернуть код ответа от сервера
     int getStatus() const { return req.getStatus(); }
+    // сохранить заголовки в файл
+    void saveHeaders(czs& path, bool out = true) const { zFile(path, false, false).writeString(req.getHeaders(out), true); }
     // вернуть логин
     zStringUTF8 getLogin() const { return login; }
     // вернуть пароль
@@ -107,21 +53,6 @@ public:
     // вернуть почту
     zStringUTF8 getEmail() const { return email; }
 protected:
-    // сохранить ответ в файл
-    void saveResponse(czs& path) const {
-        zStringUTF8 resp(req.response()->str);
-        zFile(path, false, false).writeString(resp, false);
-    }
-    // сохранить заголовки в файл
-    void saveHeaders(czs& path, bool out = true) const {
-        zFile(path, false, false).writeString(req.getHeaders(out), true);
-    }
-    // сформировать json ответ и вернуть код операции
-    int jsonResponse() {
-        auto r(req.response());
-        if(!r->ptr || !js.init(r->ptr, r->size)) return 0;
-        return req.getStatus();
-    }
     // запрос
     zHttpRequest req{true};
     // авторизатор
@@ -132,8 +63,8 @@ protected:
     zStringUTF8 token, rtoken;
     // базовый хост
     zStringUTF8 host;
-    // json
-    zJSON js;
+    // JSON
+    zJSON& js;
 };
 
 class zCloudMail : public zCloud {
@@ -143,42 +74,43 @@ public:
     // деструктор
     virtual ~zCloudMail() { }
     // авторизация
-    virtual bool auth(cstr client_id, cstr client_secret) override;
-    // создание папки
+    virtual bool auth(cstr client_id, cstr client_secret, cstr token) override;
+    // создание папки: path => полный путь к папке
     virtual bool addFolder(czs& path) override;
-    // загрузка файла
-    virtual bool upload(czs& dstPath, czs& srcPath) override;
-    // скачивание файла/папки
-    virtual bool download(zStringUTF8 source, zStringUTF8 dest, int delim) override;
-    // удаление файла
+    // загрузка файла: srcPath => полный путь к файлу(с именем файла), dstPath => полный путь(имя берется из srcPath)
+    virtual bool upload(czs& srcPath, czs& dstPath) override;
+    // скачивание файла/папки: source => полный путь на сервере, dest => путь без имени
+    virtual bool download(zStringUTF8 source, zStringUTF8 dest) override;
+    // удаление файла: path => полный путь на сервере
     virtual bool remove(czs& path) override;
-    // переименование файла/папки
+    // переименование файла/папки: path => полный путь на сервере, name => новое имя
     virtual bool rename(czs& path, czs& name) override;
-    // копирование/перемещение файла
+    // копирование/перемещение файла: srcPath => полный путь к файлу на сервере, dstPath => путь к новой папке на сервер, 
+    // move => признак переносить/копировать
     virtual bool moveOrCopy(czs& srcPath, czs& dstPath, bool move) override;
-    // публикация
+    // публикация: path => полный путь на сервере, remove => признак создавать ссылку/отозвать ее
     virtual zStringUTF8 publish(czs& path, bool remove) override;
-    // получение списка файлов/папок
-    virtual zArray<FileInfo> getFiles(czs& path, czs& meta) override;
+    // получение списка файлов/папок: path => полный путь к папке на сервере из которой берутся файлы
+    virtual zArray<FileInfo> getFiles(czs& path) override;
 protected:
     // добавление файла/папки
     bool add(czs& path, czs& hash, int size);
     // получение линка
-    zStringUTF8 getUrl(czs& type);
+    zStringUTF8 getUrl(cstr type);
 };
 
 class zCloudYandex : public zCloud {
 public:
     // конструктор -
-    zCloudYandex(cstr login, cstr password) : zCloud("https://cloud-api.yandex.net/v1/disk/resources/", login, password) { }
+    zCloudYandex(cstr login, cstr password) : zCloud("https://cloud-api.yandex.net/v1/disk/resources/", login, password) {}
     // авторизация
-    virtual bool auth(cstr client_id, cstr client_secret) override;
+    virtual bool auth(cstr client_id, cstr client_secret, cstr token) override;
     // создание папки
     virtual bool addFolder(czs& path) override;
     // загрузка файла
     virtual bool upload(czs& dstPath, czs& srcPath) override;
     // скачивание файла/папки
-    virtual bool download(zStringUTF8 source, zStringUTF8 dest, int delim) override;
+    virtual bool download(zStringUTF8 source, zStringUTF8 dest) override;
     // удаление файла
     virtual bool remove(czs& path) override;
     // переименование файла/папки
@@ -188,5 +120,30 @@ public:
     // публикация
     virtual zStringUTF8 publish(czs& path, bool remove) override;
     // получение списка файлов/папок
-    virtual zArray<FileInfo> getFiles(czs& path, czs& meta) override;
+    virtual zArray<FileInfo> getFiles(czs& path) override;
 };
+
+class zCloudDropbox : public zCloud {
+public:
+    // конструктор -
+    zCloudDropbox(cstr login, cstr password) : zCloud("https://api.dropboxapi.com/2/", login, password) {}
+    // авторизация
+    virtual bool auth(cstr client_id, cstr client_secret, cstr token) override;
+    // создание папки
+    virtual bool addFolder(czs& path) override;
+    // загрузка файла
+    virtual bool upload(czs& dstPath, czs& srcPath) override;
+    // скачивание файла/папки
+    virtual bool download(zStringUTF8 source, zStringUTF8 dest) override;
+    // удаление файла
+    virtual bool remove(czs& path) override;
+    // переименование файла/папки
+    virtual bool rename(czs& path, czs& name) override;
+    // копирование/перемещение файла
+    virtual bool moveOrCopy(czs& srcPath, czs& dstPath, bool move) override;
+    // публикация
+    virtual zStringUTF8 publish(czs& path, bool remove) override;
+    // получение списка файлов/папок
+    virtual zArray<FileInfo> getFiles(czs& path) override;
+};
+

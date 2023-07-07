@@ -42,10 +42,12 @@ public:
 			attrs += a; return a;
 		}
 		// вернуть тег по индексу
+		const zNode* operator[](int idx) const { return getTag(idx); }
 		const zNode* getTag(int idx) const {
 			return ((idx >= 0 && idx < children.size()) ? children[idx] : nullptr);
 		}
 		// вернуть тег по имени
+		const zNode* operator[](cstr _name) const { return getTag(_name); }
 		const zNode* getTag(cstr _name) const {
 			auto idx(children.indexOf<cstr>(_name));
 			return idx == -1 ? nullptr : children[idx];

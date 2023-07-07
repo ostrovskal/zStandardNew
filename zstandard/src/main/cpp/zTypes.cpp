@@ -112,7 +112,7 @@ template<> u8* zRect<int>::state(u8 *ptr, bool save) {
 template<> zRect<int> zRect<int>::dimens(float sw) {
 	auto _x = (int)round((float)x * sw), _y = (int)round((float)y * sw);
 	auto _w = (int)round((float)w * sw), _h = (int)round((float)h * sw);
-	return zRect<int>(_x, _y, _w, _h);
+	return { _x, _y, _w, _h };
 }
 
 template<> const zRect<int>& zRect<int>::from(cstr s) {
@@ -145,7 +145,7 @@ zMatrix::zMatrix(float _f11, float _f12, float _f13, float _f14, float _f21, flo
 	_41 = _f41; _42 = _f42; _43 = _f43; _44 = _f44;
 }
 
-float zMatrix::MINOR(const zMatrix& m, int r0, int r1, int r2, int c0, int c1, int c2) const {
+float zMatrix::MINOR(const zMatrix& m, int r0, int r1, int r2, int c0, int c1, int c2) {
 	float* f(m);
 	return  f[r0 * 4 + c0] * (f[r1 * 4 + c1] * f[r2 * 4 + c2] - f[r2 * 4 + c1] * f[r1 * 4 + c2]) -
 			f[r0 * 4 + c1] * (f[r1 * 4 + c0] * f[r2 * 4 + c2] - f[r2 * 4 + c0] * f[r1 * 4 + c2]) +
@@ -160,14 +160,14 @@ float zMatrix::determinant() const {
 }
 
 zMatrix zMatrix::adjoint() const {
-	return zMatrix(	MINOR( *this, 1, 2, 3, 1, 2, 3), -MINOR(*this, 0, 2, 3, 1, 2, 3),
+	return {	MINOR( *this, 1, 2, 3, 1, 2, 3), -MINOR(*this, 0, 2, 3, 1, 2, 3),
 			   		MINOR( *this, 0, 1, 3, 1, 2, 3), -MINOR(*this, 0, 1, 2, 1, 2, 3),
 			   		-MINOR(*this, 1, 2, 3, 0, 2, 3), MINOR( *this, 0, 2, 3, 0, 2, 3),
 			   		-MINOR(*this, 0, 1, 3, 0, 2, 3), MINOR( *this, 0, 1, 2, 0, 2, 3),
 			   		MINOR( *this, 1, 2, 3, 0, 1, 3), -MINOR(*this, 0, 2, 3, 0, 1, 3),
 			   		MINOR( *this, 0, 1, 3, 0, 1, 3), -MINOR(*this, 0, 1, 2, 0, 1, 3),
 			   		-MINOR(*this, 1, 2, 3, 0, 1, 2), MINOR( *this, 0, 2, 3, 0, 1, 2),
-			   		-MINOR(*this, 0, 1, 3, 0, 1, 2), MINOR( *this, 0, 1, 2, 0, 1, 2));
+			   		-MINOR(*this, 0, 1, 3, 0, 1, 2), MINOR( *this, 0, 1, 2, 0, 1, 2) };
 }
 
 const zMatrix& zMatrix::view(const zVec3& pos, const zVec3& at, const zVec3& up) {
@@ -234,16 +234,16 @@ const zMatrix& zMatrix::world(const zVec3& p, const zVec3& scale, const zQuat& o
 }
 
 const zMatrix& zMatrix::ortho2D(int left, int top, int right, int bottom) {
-	float near(-1.0f), far(1.0f);
-	float x(1.0f / (float)(right - left)), y(1.0f / (float)(bottom - top)), z(1.0f / (float)(far - near));
+	float nr(-1.0f), fr(1.0f);
+	float x(1.0f / (float)(right - left)), y(1.0f / (float)(bottom - top)), z(1.0f / (float)(fr - nr));
 	identity();
 	_11 = 2.0f * x; _22 = 2.0f * y; _33 = -2.0f * z;
-	_41 = -(right + left) * x; _42 = (top + bottom) * y; _43 = -(far + near) * z;
+	_41 = -(float)(right + left) * x; _42 = (float)(top + bottom) * y; _43 = -(fr + nr) * z;
 	return *this;
 }
 
 const zMatrix& zMatrix::ortho(int left, int right, int top, int bottom) {
-    identity(); float tb((float)(top - bottom)), rl((float)(right - left));
+    identity(); auto tb((float)(top - bottom)), rl((float)(right - left));
     _11 = 2.0f / rl;
     _22 = 2.0f / tb;
     _33 = 1.0f;
@@ -260,10 +260,10 @@ const zMatrix& zMatrix::perspective(float w, float h, float zn, float zf) {
 }
 
 const zMatrix& zMatrix::perspectiveFov(float fovy, float aspect, float zn, float zf) {
-	float h(cosf(fovy / 2.0f) / sinf(fovy / 2.0f)), w(h / aspect), f(zf / (zf - zn));
+	float tg(tanf(fovy * 0.5f)), nf(zf - zn);
 	memset(*this, 0, sizeof(zMatrix));
-	_11 = w; _22 = h; _33 = f;
-	_34 = 1.0f; _43 = -zn * f;
+	_11 = 1.0f / tg; _22 = aspect / tg; _33 = (zf + zn) / nf;
+	_34 = 1.0f; _43 = -(2.0f * zf * zn) / nf;
 	return *this;
 }
 
@@ -274,21 +274,6 @@ auto zQuat::operator *= (const zQuat& q) {
 	float ww(w * q.w - x * q.x - y * q.y - z * q.z);
 	x = xx; y = yy; z = zz; w = ww;
 	return *this;
-/*
-	A = (q1->w + q1->x) * (q2->w + q2->x);
-	B = (q1->z - q1->y) * (q2->y - q2->z);
-	C = (q1->x - q1->w) * (q2->y + q2->z);
-	D = (q1->y + q1->z) * (q2->x - q2->w);
-	E = (q1->x + q1->z) * (q2->x + q2->y);
-	F = (q1->x - q1->z) * (q2->x - q2->y);
-	G = (q1->w + q1->y) * (q2->w - q2->z);
-	H = (q1->w - q1->y) * (q2->w + q2->z);
-
-	res->w = B + (-E - F + G + H) * 0.5;
-	res->x = A - ( E + F + G + H) * 0.5;
-	res->y =-C + ( E - F + G - H) * 0.5;
-	res->z =-D + ( E - F - G + H) * 0.5;
-*/
 }
 
 auto zQuat::operator * (const zQuat& q) const {
@@ -367,17 +352,17 @@ const zQuat& zQuat::fromMatrix(const zMatrix& mm) {
 
 zVec3 zQuat::xAxis() const {
 	auto fTy(2 * y), fTz(2 * z);
-	return zVec3(1 - ((fTy * y) + (fTz * z)), (fTy * x) + (fTz * w), (fTz * x) - (fTy * w));
+	return { 1 - ((fTy * y) + (fTz * z)), (fTy * x) + (fTz * w), (fTz * x) - (fTy * w) };
 }
 
 zVec3 zQuat::yAxis() const {
 	auto fTx(2 * x), fTy(2 * y), fTz(2 * z);
-	return zVec3((fTy * x) - (fTz * w), 1 - ((fTx * x) + (fTz * z)), (fTz * y) + (fTx * w));
+	return {(fTy * x) - (fTz * w), 1 - ((fTx * x) + (fTz * z)), (fTz * y) + (fTx * w) };
 }
 
 zVec3 zQuat::zAxis() const {
 	auto fTx(2.0f * x), fTy(2.0f * y), fTz(2.0f * z);
-	return zVec3((fTz * x) + (fTy * w), (fTz * y) - (fTx * w), 1 - ((fTx * x) + (fTy * y)));
+	return { (fTz * x) + (fTy * w), (fTz * y) - (fTx * w), 1 - ((fTx * x) + (fTy * y)) };
 }
 
 const zQuat& zQuat::inverse() {
@@ -487,7 +472,7 @@ const zMatrix& zMatrix::from3x3(float* f) {
 	return *this;
 }
 
-float* z_vec3_mtx(float* v, float* m) {
+float* z_vec3_mtx(const float* v, const float* m) {
 	static float r[3];
 	r[0] = v[0] * m[0] + v[1] * m[4] + v[2] * m[8]  + m[12];
 	r[1] = v[0] * m[1] + v[1] * m[5] + v[2] * m[9]  + m[13];
@@ -495,7 +480,7 @@ float* z_vec3_mtx(float* v, float* m) {
 	return r;
 }
 
-float* z_vec4_mtx(float* v, float* m) {
+float* z_vec4_mtx(const float* v, const float* m) {
 	static float r[4];
 	r[0] = v[0] * m[0] + v[1] * m[4] + v[2] * m[8]  + v[3] * m[12];
 	r[1] = v[0] * m[1] + v[1] * m[5] + v[2] * m[9]  + v[3] * m[13];
@@ -512,7 +497,7 @@ float* z_mtx_vec4(float* m, float* v4) {
 	return z_vec4_mtx(v4, m);
 }
 
-float* z_mtx_mtx(float* m1, float* m2) {
+float* z_mtx_mtx(const float* m1, const float* m2) {
 	static float m[16];
 
 	m[0] = m1[0] * m2[0] + m1[1] * m2[4] + m1[2] * m2[8]  + m1[3] * m2[12];
@@ -610,4 +595,74 @@ ret.f_[15] = 1.0f;
 return *this;
 }
 *
- */
+ static void RotationX(zMatrix& m, float fAngle) {
+    float fCosine, fSine;
+    auto b(m.mtx);
+    fCosine = cosf(fAngle);
+    fSine = sinf(fAngle);
+    b[0] = 1.0f;
+    b[4] = 0.0f;
+    b[8] = 0.0f;
+    b[12] = 0.0f;
+    b[1] = 0.0f;
+    b[5] = fCosine;
+    b[9] = fSine;
+    b[13] = 0.0f;
+    b[2] = 0.0f;
+    b[6] = -fSine;
+    b[10] = fCosine;
+    b[14] = 0.0f;
+    b[3] = 0.0f;
+    b[7] = 0.0f;
+    b[11] = 0.0f;
+    b[15] = 1.0f;
+}
+
+static void RotationY(zMatrix& m, float fAngle) {
+    float fCosine, fSine;
+    fCosine = cosf(fAngle);
+    fSine = sinf(fAngle);
+    auto b(m.mtx);
+    b[0] = fCosine;
+    b[4] = 0.0f;
+    b[8] = -fSine;
+    b[12] = 0.0f;
+    b[1] = 0.0f;
+    b[5] = 1.0f;
+    b[9] = 0.0f;
+    b[13] = 0.0f;
+    b[2] = fSine;
+    b[6] = 0.0f;
+    b[10] = fCosine;
+    b[14] = 0.0f;
+    b[3] = 0.0f;
+    b[7] = 0.0f;
+    b[11] = 0.0f;
+    b[15] = 1.0f;
+}
+
+static void RotationZ(zMatrix& m, float fAngle) {
+    float fCosine, fSine;
+    fCosine = cosf(fAngle);
+    fSine = sinf(fAngle);
+    auto b(m.mtx);
+    b[0] = fCosine;
+    b[4] = fSine;
+    b[8] = 0.0f;
+    b[12] = 0.0f;
+    b[1] = -fSine;
+    b[5] = fCosine;
+    b[9] = 0.0f;
+    b[13] = 0.0f;
+    b[2] = 0.0f;
+    b[6] = 0.0f;
+    b[10] = 1.0f;
+    b[14] = 0.0f;
+    b[3] = 0.0f;
+    b[7] = 0.0f;
+    b[11] = 0.0f;
+    b[15] = 1.0f;
+}
+
+*/
+ 
