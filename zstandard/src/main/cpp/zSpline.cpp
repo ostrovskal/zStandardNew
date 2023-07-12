@@ -2,18 +2,6 @@
 #include "zstandard/zstandard.h"
 #include "zstandard/zSpline.h"
 
-void zSplineBase::addPoint(ptf pt) {
-    if(_elimColinearPoints && _points.size() > 2) {
-        int N = _points.size() - 1;
-        ptf p0(_points[N - 1] - _points[N - 2]);
-        ptf p1(_points[N] - _points[N - 1]);
-        ptf p2(pt - _points[N]);
-        float delta((p2.y - p1.y) * (p1.x - p0.x) - (p1.y - p0.y) * (p2.x - p1.x));
-        if(delta < Z_EPSILON) { _points.erase(_points.size() - 1, 1); }
-    }
-    _points += pt;
-}
-
 ptf zClassicSpline::eval(int seg, float t) {
     auto points(getPoints());
     const float ONE_OVER_SIX(1.0f / 6.0f);
@@ -113,20 +101,19 @@ bool zBezierSpline::computeSpline() {
     return true;
 }
 
-zArray<ptf> smoothPath(const zArray<ptf>& path, int divisions, bool bezier) {
-    zArray<ptf> ret;
+void smoothPath(zArray<ptf>& path, int divisions, bool bezier) {
     if(path.size() > 1) {
         zClassicSpline cs; zBezierSpline bs;
         auto spline(bezier ? (zSplineBase*)&bs : (zSplineBase*)&cs);
         for(auto &pt: path) spline->addPoint(pt);
-        spline->computeSpline();
+        auto endp(path[path.size() - 1]);
+        path.clear(); spline->computeSpline();
         for(int idx = spline->getPoints().size() - 2; idx >= 0; --idx) {
             for(int division = divisions - 1; division >= 0; --division) {
                 float t((float)division * 1.0f / (float)divisions);
-                ret += spline->eval(idx, t);
+                path += spline->eval(idx, t);
             }
         }
-        ret.insert(0, path[path.size() - 1]);
+        path.insert(0, endp);
     }
-    return ret;
 }

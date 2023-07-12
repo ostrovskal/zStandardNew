@@ -493,7 +493,7 @@ public:
 	// проверка на единичную матрицу
 	bool isIdent() const { return memcmp(&_identity, *this, 16) == 0; }
 	// специальные
-	static float MINOR(const zMatrix& m, int r0, int r1, int r2, int c0, int c1, int c2) ;
+	static float MINOR(const zMatrix& m, int r0, int r1, int r2, int c0, int c1, int c2);
 	// определитель
 	float determinant() const;
 	zMatrix adjoint() const;

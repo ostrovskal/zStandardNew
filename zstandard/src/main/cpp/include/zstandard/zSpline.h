@@ -5,20 +5,17 @@
 #include "zTypes.h"
 
 class zSplineBase {
-private:
-    zArray<ptf> _points;
-    bool _elimColinearPoints;
-protected:
-    virtual void resetDerived() = 0;
 public:
-    zSplineBase() { _elimColinearPoints = true; }
+    zSplineBase() {  }
     const zArray<ptf>& getPoints() { return _points; }
-    bool getElimColinearPoints() { return _elimColinearPoints; }
-    void setElimColinearPoints(bool elim) { _elimColinearPoints = elim; }
     virtual ptf eval(int seg, float t) = 0;
     virtual bool computeSpline() = 0;
     void reset() { _points.clear(); resetDerived(); }
-    void addPoint(ptf pt);
+    void addPoint(cptf& pt) { _points += pt;  }
+protected:
+    virtual void resetDerived() = 0;
+private:
+    zArray<ptf> _points;
 };
 
 class zClassicSpline : public zSplineBase {
@@ -41,4 +38,4 @@ public:
     virtual bool computeSpline() override;
 };
 
-zArray<ptf> smoothPath(const zArray<ptf>& path, int divisorts, bool bezier);
+void smoothPath(zArray<ptf>& path, int divisorts, bool bezier);
