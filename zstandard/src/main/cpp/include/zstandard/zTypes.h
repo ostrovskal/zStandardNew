@@ -68,7 +68,7 @@ public:
 	const zColor& from(cstr s);
 	u8* state(u8* ptr, bool save);
 	union {
-		struct { float r{0}, g{0}, b{0}, a{1}; };
+		struct { float r, g, b, a; };
 		float vec[4];
 	};
 	static zColor shadow;
@@ -93,6 +93,18 @@ public:
 	bool isNotEmpty() const { return !isEmpty(); }
 	const T& operator [](int index) const { return buf[index]; }
 	T& operator [](int index) { return buf[index]; }
+	zPoint<T> operator + (const zPoint<T>& s) { return zPoint<T>(x + s.x, y + s.y); }
+	zPoint<T> operator + (const T& s) { return zPoint<T>(x + s, y + s); }
+	zPoint<T> operator - (const zPoint<T>& s) { return zPoint<T>(x - s.x, y - s.y); }
+	zPoint<T> operator - (const T& s) { return zPoint<T>(x - s, y - s); }
+	zPoint<T> operator * (const zPoint<T>& s) { return zPoint<T>(x * s.x, y * s.y); }
+	zPoint<T> operator * (const T& s) { return zPoint<T>(x * s, y * s); }
+	zPoint<T> operator / (const zPoint<T>& s) { return zPoint<T>(x / s.x, y / s.y); }
+	zPoint<T> operator / (const T& s) { return zPoint<T>(x / s, y / s); }
+	friend zPoint<T> operator - (const T& f, const zPoint<T>& v) { return zPoint<T>(f - v.x, f - v.y); }
+	friend zPoint<T> operator + (const T& f, const zPoint<T>& v) { return zPoint<T>(f + v.x, f + v.y); }
+	friend zPoint<T> operator * (const T& f, const zPoint<T>& v) { return zPoint<T>(f * v.x, f * v.y); }
+	friend zPoint<T> operator / (const T& f, const zPoint<T>& v) { return zPoint<T>(f / v.x, f / v.y); }
 	const zPoint<T>& operator = (const zPoint<T>& p) { x = p.x; y = p.y; return *this; }
 	const zPoint<T>& operator += (const zPoint<T>& p) { x += p.x; y += p.y; return *this; }
 	const zPoint<T>& operator -= (const zPoint<T>& p) { x -= p.x; y -= p.y; return *this; }
@@ -128,6 +140,14 @@ public:
 	zSize<T> operator + (const T& s) { return zSize<T>(w + s, h + s); }
 	zSize<T> operator - (const zSize<T>& s) { return zSize<T>(w - s.w, h - s.h); }
 	zSize<T> operator - (const T& s) { return zSize<T>(w - s, h - s); }
+	zSize<T> operator * (const zSize<T>& s) { return zSize<T>(w * s.w, h * s.h); }
+	zSize<T> operator * (const T& s) { return zSize<T>(w * s, h * s); }
+	zSize<T> operator / (const zSize<T>& s) { return zSize<T>(w / s.w, h / s.h); }
+	zSize<T> operator / (const T& s) { return zSize<T>(w / s, h / s); }
+	friend zSize<T> operator - (const T& f, const zSize<T>& v) { return zSize<T>(f - v.x, f - v.y); }
+	friend zSize<T> operator + (const T& f, const zSize<T>& v) { return zSize<T>(f + v.x, f + v.y); }
+	friend zSize<T> operator * (const T& f, const zSize<T>& v) { return zSize<T>(f * v.x, f * v.y); }
+	friend zSize<T> operator / (const T& f, const zSize<T>& v) { return zSize<T>(f / v.x, f / v.y); }
 	const zSize<T>& operator = (const zSize<T>& s) { w = s.w; h = s.h; return *this; }
 	const zSize<T>& operator += (const zSize<T>& s) { w += s.w; h += s.h; return *this; }
 	const zSize<T>& operator -= (const zSize<T>& s) { w -= s.w; h -= s.h; return *this; }

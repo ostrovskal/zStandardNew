@@ -166,7 +166,7 @@ const zStringUTF8& zStringUTF8::insert(i32 idx, cstr _str) {
     if(idx > _count) idx = _count;
     if(idx <= _count && alloc(_count + z_countUTF8(_str), size() + _size, true)) {
         auto _buf(ptr(idx));
-        memmove(_buf + _size, _buf, sizeCopy(_buf + _size));
+        memmove(_buf + _size, _buf, sizeCopy(_buf + _size + 1));
         memcpy(_buf, _str, _size);
     }
     return *this;

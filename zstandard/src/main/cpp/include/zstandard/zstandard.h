@@ -79,6 +79,22 @@ struct HEADER_TGA {
     u8  bBitesPerPixel;	// бит на пиксель
     u8  bFlags;			//
 };
+
+struct HEADER_WAV {
+    char    RIFF[4];
+    u32     ChunkSize;
+    char    WAVE[4];
+    char    fmt[4];
+    u32     Subchunk1Size;
+    u16     AudioFormat;
+    u16     NumOfChan;          // число каналов
+    u32     SampleRate;         // частота
+    u32     bytesPerSec;        //
+    u16     blockAlign;
+    u16     bitsPerSample;      // бит на канал(8/16)
+    char    Subchunk2ID[4];
+    u32     Subchunk2Size;
+};
 #pragma pack(pop)
 
 #include "zTypes.h"

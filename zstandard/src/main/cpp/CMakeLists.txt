@@ -33,6 +33,7 @@ add_library(zstandard STATIC
         zCloudYandex.cpp
         zCloudDropbox.cpp
         zHttpRequest.cpp
+        zSpline.cpp
 )
 
 target_include_directories(zstandard PUBLIC include)
