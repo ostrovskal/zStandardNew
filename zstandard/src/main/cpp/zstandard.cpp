@@ -46,15 +46,20 @@ void z_log(bool info, cstr file, cstr func, int line, cstr msg, ...) {
     va_end(varArgs);
 }
 
-char z_toHex(char** _buf) {
-    auto buf(*_buf); auto ch(*buf);
-    if(isxdigit(*buf) && isxdigit(buf[1])) {
-        auto t1(*buf++), t2(*buf++); *_buf = buf;
-        t1 = t1 <= '9' ? (t1 - 48) : (t1 <= 'F' ? t1 - 55 : t1 - 92);
-        t2 = t2 <= '9' ? (t2 - 48) : (t2 <= 'F' ? t2 - 55 : t2 - 92);
-        ch = (char)(t2 | (t1 << 4));
-    }
+int z_fromHex(char ch) {
+    if(ch >= '0' && ch <= '9') ch -= 48;
+    else if(ch >= 'A' && ch <= 'F') ch -= 55;
+    else if(ch >= 'a' && ch <= 'f') ch -= 87;
+    else ch = 0;
     return ch;
+}
+
+cstr z_toHex(int ch) {
+    static char str[3] = { 0, 0, 0 };
+    static cstr hex("0123456789ABCDEF-");
+    str[0] = hex[((ch >> 4) & 15)];
+    str[1] = hex[ch & 15];
+    return str;
 }
 
 void z_escape(char** _dst, char** _src) {
@@ -63,10 +68,7 @@ void z_escape(char** _dst, char** _src) {
     while(*esc) {
         if(ch == *esc++) {
             ch = *esc;
-            switch(ch) {
-                case 1: *p++ = z_toHex(&src); ch = z_toHex(&src); break;
-                case 2: break;
-            }
+            if(ch == 1) { *p++ = (char)z_fromHex(*src++); ch = (char)z_fromHex(*src++); }
             *p++ = ch;
             break;
         }
@@ -134,8 +136,8 @@ char* z_ntos(void* v, i32 r, bool sign, int size, char** end) {
         case RADIX_BIN:
             n = *(u32*)v;
             if(sign && (i32)n < 0) { sgn = '-'; i32* nn((i32*)&n); *nn = -*nn; }
-            while(size--) { *--buf = sym[(u8)(n & c)]; n >>= s; }
-            if(sgn) *--buf = sgn;
+            while(size--) { *--buf = (char)sym[(u8)(n & c)]; n >>= s; }
+            if(sgn) *--buf = (char)sgn;
             break;
         case RADIX_FLT: d = (double)(*(float*)v);
         case RADIX_DBL: if(r == RADIX_DBL) d = *(double*)v;
@@ -145,7 +147,7 @@ char* z_ntos(void* v, i32 r, bool sign, int size, char** end) {
             st = buf; buf = &buffer[16]; *buf++ = '.';
             for(int i = 0 ; i < c; i++) {
                 d -= n; d *= 10.0; n = (u32)d;
-                *buf++ = (u8)(n + '0');
+                *buf++ = (char)(n + '0');
             }
             if(end) *end = buf;
             *buf = 0; buf = st;
@@ -270,7 +272,7 @@ u8* z_rle_decompress(u8* in, int size, int nsize) {
 	return _out;
 }
 
-char* z_fmtValue(i32 value, u32 offs, bool hex, u32 radix, bool _showHex) {
+char* z_fmtValue(i32 value, u32 offs, bool hex, i32 radix, bool _showHex) {
     static const char* fmtTypes[] = {
             "3X", "2X", "3X ", "2X ",
             "5(X)", "4(#X)", "3(X)", "2(#X)",
@@ -290,8 +292,8 @@ char* z_fmtValue(i32 value, u32 offs, bool hex, u32 radix, bool _showHex) {
     if(offs == ZFV_BINARY) radix = RADIX_BIN;
     else if(offs == ZFV_DECIMAL) hex = false;
     auto buffer(_buffer), tmp(buffer);
-    auto rdx(offs + (hex ? _showHex : 0));
-    auto res(z_ntos(&value, radix == 0 ? rdx & 1U : radix, true, 4, &end));
+    auto rdx((int)(offs + (hex ? _showHex : 0)));
+    auto res(z_ntos(&value, radix == 0 ? rdx & 1 : radix, true, 4, &end));
     auto spec(fmtTypes[rdx]); auto lnum((spec[0] - '0') - (end - res));
     bool znak(false);
     while((ch = *++spec)) {
@@ -324,23 +326,23 @@ rtf z_vertexMinMax(zVertex2D* v, int count) {
         if(mxy < v->y) mxy = v->y;
         v++;
     }
-    return rtf(mnx, mny, mxx - mnx, mxy - mny);
+    return { mnx, mny, mxx - mnx, mxy - mny };
 }
 
 void z_rotate(cpti& c, zVertex2D* v, int count, float angle) {
     auto theta(deg2rad(angle));
     float cs(cosf(theta)), sn(sinf(theta));
     for(int i = 0 ; i < count; i++) {
-        auto xx(v[i].x - c.x), yy(v[i].y - c.y);
-        v[i].x = (xx * cs - yy * sn) + c.x;
-        v[i].y = (xx * sn + yy * cs) + c.y;
+        auto xx(v[i].x - (float)c.x), yy(v[i].y - (float)c.y);
+        v[i].x = (xx * cs - yy * sn) + (float)c.x;
+        v[i].y = (xx * sn + yy * cs) + (float)c.y;
     }
 }
 
 void z_scale(cpti& c, zVertex2D* v, int count, float xzoom, float yzoom) {
     for(int i = 0 ; i < count; i++) {
-        auto x((v[i].x - c.x) * xzoom), y((v[i].y - c.y) * yzoom);
-        v[i].x = x + c.x; v[i].y = y + c.y;
+        auto x((v[i].x - (float)c.x) * xzoom), y((v[i].y - (float)c.y) * yzoom);
+        v[i].x = x + (float)c.x; v[i].y = y + (float)c.y;
     }
 }
 
@@ -399,19 +401,19 @@ static const u16 cp1251_2uni[128] = {
 int z_decodeUTF8(u32 ch) {
     int r(0);
     switch(z_charLengthUTF8((cstr)&ch)) {
-        case 1: return ch;
-        case 2: r = ((ch & 0b0000000000011111) << 6) | ((ch & 0b00111111'00000000) >> 8); break;
-        case 3: r = ((ch & 0b00000000'00000000'00001111) << 12) | ((ch & 0b00000000'00111111'00000000) >> 2) |
-                    ((ch & 0b00111111'00000000'00000000) >> 16); break;
-        case 4: r = ((ch & 0b00000000'00000000'00000000'00000111) << 18) | ((ch & 0b00000000'00000000'00111111'00000000) << 4) |
-                    ((ch & 0b00000000'00111111'00000000'00000000) >> 10) | ((ch & 0b00111111'00000000'00000000'00000000) >> 24);
+        case 1: return (int)ch;
+        case 2: r = (int)(((ch & 0b0000000000011111) << 6) | ((ch & 0b00111111'00000000) >> 8)); break;
+        case 3: r = (int)(((ch & 0b00000000'00000000'00001111) << 12) | ((ch & 0b00000000'00111111'00000000) >> 2) |
+                         ((ch & 0b00111111'00000000'00000000) >> 16)); break;
+        case 4: r = (int)(((ch & 0b00000000'00000000'00000000'00000111) << 18) | ((ch & 0b00000000'00000000'00111111'00000000) << 4) |
+                         ((ch & 0b00000000'00111111'00000000'00000000) >> 10) | ((ch & 0b00111111'00000000'00000000'00000000) >> 24));
                 r -= 0x10000; r = (((r / 0x400) + 0xD800) >> 16) | ((r % 0x400) + 0xDC00); break;
     }
     return ((r >= 0x410 && r <= 0x44f) ? (0xC0 + (r - 0x410)) : '?');
 }
 
 int z_encodeUTF8(u32 ch) {
-    if(ch < 0x80) return ch;
+    if(ch < 0x80) return (int)ch;
     auto wc(cp1251_2uni[ch - 0x80]);
     return (wc == 0xfffd ? '?' : ((wc & 0b00000000'00111111) << 8) | (((wc & 0b00000111'11000000) >> 6) | 0b10000000'11000000));
 }

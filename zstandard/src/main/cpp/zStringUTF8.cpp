@@ -317,29 +317,3 @@ zStringUTF8 z_fmtUTF8(cstr fmt, ...) {
     va_end(args);
     return tmp;
 }
-
-zStringUTF8 z_urlEncodeUTF8(cstr _buf) {
-    static cstr hex("0123456789ABCDEF-");
-    zStringUTF8 ptr('\0', z_strlen(_buf) * 3);
-    auto _ptr(ptr.buffer()); char ch;
-    while((ch = *_buf++)) {
-        if(!isalnum(ch) && ch != '.' && ch != '-' && ch != '_' && ch != '~') {
-            *_ptr++ = '%'; *_ptr++ = hex[(ch & 240) >> 4];
-            ch = hex[ch & 15];
-        }
-        *_ptr++ = ch;
-    }
-    *_ptr = 0;
-    return {ptr};
-}
-
-zStringUTF8 z_urlDecodeUTF8(cstr buf) {
-    auto _buf((char*)buf); char ch;
-    while((ch = *_buf++)) {
-        if(ch == '%') ch = z_toHex(&_buf);
-        *_buf++ = ch;
-    }
-    *_buf = 0;
-    return {buf};
-}
-

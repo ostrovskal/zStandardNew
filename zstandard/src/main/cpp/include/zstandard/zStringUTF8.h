@@ -49,20 +49,20 @@ public:
     // зафиксировать зарезервированное место
     void releaseReserved() { _str_buffer.count = z_countUTF8(buffer()); _str_buffer.length = z_sizeUTF8(buffer()); }
     // длина символа
-    i32 charSize(int ch) const { return z_charLengthUTF8((cstr)&ch); }
-    i32 charSize(cstr _str) const { return z_charLengthUTF8(_str); }
+    static i32 charSize(int ch) { return z_charLengthUTF8((cstr)&ch); }
+    static i32 charSize(cstr _str) { return z_charLengthUTF8(_str); }
     // следующий символ
-    cstr next(cstr _str) const { return _str + z_charLengthUTF8(_str); }
+    static cstr next(cstr _str) { return _str + z_charLengthUTF8(_str); }
     // вернуть количество символов
     i32 count() const { return _str_buffer.count; }
     // вернуть размер строки
     i32 size() const { return _str_buffer.length; }
     int at(i32 idx) const { return z_charUTF8(z_ptrUTF8(str(), idx)); }
     // преобразовать из UTF8 в ASCII
-    int decode(cstr _str) const { return z_decodeUTF8(z_charUTF8(_str)); }
-    int decode(i32 idx) const { return decode(z_ptrUTF8(str(), idx)); }
+    static int decode(cstr _str, int* length = nullptr) { return z_decodeUTF8(z_charUTF8(_str, length)); }
+    int decode(i32 idx, int* length = nullptr) const { return decode(z_ptrUTF8(str(), idx), length); }
     // преобразовать из ASCII в UTF8
-    int encode(int ch) const { return z_encodeUTF8(ch); }
+    static int encode(int ch) { return z_encodeUTF8(ch); }
     void set(i32 idx, cstr _str);
     void empty() { if(_str_buffer.size_buf > Z_BUFFER_LENGTH) delete _str_buffer.ptr; init(); }
     bool isEmpty() const { return count() == 0; }
@@ -137,7 +137,15 @@ private:
 
 using czs = const zStringUTF8;
 
+// генерация GUID
+inline zStringUTF8 z_guidUTF8() { return { z_guid().str() }; }
+// двоичный буфер в base64
+inline zStringUTF8 z_base64EncodeUTF8(const u8* ptr, u32 size) { return { z_base64Encode(ptr, size).str() }; }
+// base64 в двоичный буфер
+inline zStringUTF8 z_base64DecodeUTF8(cstr ptr, i32 size) { return { z_base64Decode(ptr, size).str() }; }
+// кодировать строку
+inline zStringUTF8 z_urlEncodeUTF8(cstr _buf) { return { z_urlEncode(_buf).str() }; }
+// декодировать строку
+inline zStringUTF8 z_urlDecodeUTF8(cstr buf) { return {z_urlDecode(buf).str() }; }
 // форматирование
 zStringUTF8 z_fmtUTF8(cstr fmt, ...);
-zStringUTF8 z_urlEncodeUTF8(cstr _buf);
-zStringUTF8 z_urlDecodeUTF8(cstr buf);

@@ -15,32 +15,43 @@ zColor zColor::gray(0xff808080);
 zColor zColor::shadow(0xaf101010);
 zColor zColor::black(0xff000000);
 
-static u32 z_hex(u8 ch) {
-	if(ch >= '0' && ch <= '9') ch -= 48;
-	else if(ch >= 'A' && ch <= 'F') ch -= 55;
-	else if(ch >= 'a' && ch <= 'f') ch -= 87;
-	else ch = 0;
-	return ch;
-}
-
-zColor::zColor(cstr str) {
+// #aarrggbb, 0xaarrggbb, name
+zColor zColor::from(cstr _s) {
+	static cstr cNames[] = { "black", "red", "blue", "green", "yellow", "white", "silver", "maroon", "navy", "purple",
+							 "fuchsia", "lime", "olive", "teal", "aqua", "gray" };
+	static u32 cValues[] = { 0xff000000, 0xffff0000, 0xff0000ff, 0xff008000, 0xfff0f000, 0xffffffff, 0xffc0c0c0, 0xff800000,
+							 0xff000080, 0xff800080, 0xffff00ff, 0xff00ff00, 0xff808000, 0xff008080, 0xff00ffff, 0xff808080 };
+	zStringUTF8 s(_s);
+	for(int i = 0 ; i < 16; i++) {
+		if(s == cNames[i]) return { cValues[i] };
+	}
+	// удалить префиксы(если есть)
+	s.remove("#"); s.remove("0x");
 	u32 argb(0xffffffff);
-	auto l(z_strlen(str));
+	if(s.count() == 3) {
+		auto r(s[0]), g(s[1]), b(s[2]);
+		s = z_fmtUTF8("ff%c%c%c%c%c%c", r, r, g, g, b, b);
+	}
+	auto l(s.count());
+	if(l < 7) {
+		zStringUTF8 t('f', 8 - l);
+		s.insert(0, t); l = 8;
+	}
 	if(l > 7) l = 8;
-	int tetra(15);
+	int tetra(15); auto str(s.str());
 	for(int i = 0; i < l; i++) {
-		auto ch(z_hex(str[(l - i) - 1]));
+		auto ch(z_fromHex(str[(l - i) - 1]));
 		argb &= ~tetra; argb |= (ch << (i << 2));
 		tetra <<= 4;
 	}
-	set(argb);
+	return { argb };
 }
 
 void zColor::set(u32 rgba) {
-	vec[0] = (float)((rgba & 0x000000ffU) >>  0U) / 255.0f;
-	vec[1] = (float)((rgba & 0x0000ff00U) >>  8U) / 255.0f;
-	vec[2] = (float)((rgba & 0x00ff0000U) >> 16U) / 255.0f;
-	vec[3] = (float)((rgba & 0xff000000U) >> 24U) / 255.0f;
+	a = (float)((rgba & 0xff000000U) >> 24U) / 255.0f;
+	r = (float)((rgba & 0x00ff0000U) >> 16U) / 255.0f;
+	g = (float)((rgba & 0x0000ff00U) >>  8U) / 255.0f;
+	b = (float)((rgba & 0x000000ffU) >>  0U) / 255.0f;
 }
 
 u32 zColor::toABGR() const {
@@ -57,14 +68,6 @@ u32 zColor::toARGB() const {
 	auto _b((int)(b * 255.0f));
 	auto _a((int)(a * 255.0f));
 	return _b | (_g << 8) | (_r << 16) | (_a << 24);
-}
-
-const zColor& zColor::from(cstr s) {
-	r = z_ston<float>(s, RADIX_FLT); s = z_strAfter(s, ',');
-	if(s) g = z_ston<float>(s, RADIX_FLT), s = z_strAfter(s, ','); else g = r;
-	if(s) b = z_ston<float>(s, RADIX_FLT), s = z_strAfter(s, ','); else b = g;
-	if(s) a = z_ston<float>(s, RADIX_FLT); else a = b;
-	return *this;
 }
 
 u8* zColor::state(u8 *ptr, bool save) {

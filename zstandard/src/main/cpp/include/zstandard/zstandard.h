@@ -323,7 +323,8 @@ inline void qwordBE(u8** buf, u64 val) {
 }
 
 // из строки в hex
-char z_toHex(char** _buf);
+cstr z_toHex(int ch);
+int z_fromHex(char ch);
 // преобразование escape
 void z_escape(char** dst, char** src);
 // вычисление CRC
@@ -334,7 +335,7 @@ u32 z_hash(cstr str, i32 len);
 // ремаппинг
 i32 z_remap(i32 value, i32* place);
 // число в строку с формированием
-char* z_fmtValue(i32 value, u32 type, bool hex, u32 radix = RADIX_DEC, bool _showHex = false);
+char* z_fmtValue(i32 value, u32 type, bool hex, i32 radix = RADIX_DEC, bool _showHex = false);
 // число в строку
 char* z_ntos(void* v, i32 r, bool sign, int size = 4, char** end = nullptr);
 // строку в число

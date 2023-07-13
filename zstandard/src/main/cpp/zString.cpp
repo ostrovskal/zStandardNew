@@ -5,8 +5,6 @@
 #include "zstandard/zstandard.h"
 #include "zstandard/zString.h"
 
-static cstr hex("0123456789ABCDEF-");
-
 zString::zString(i32 value, u32 offs, bool _hex, u32 radix) {
     init();
     *this = z_fmtValue(value, offs, _hex, radix);
@@ -266,8 +264,8 @@ const zString &zString::replaceAmp(bool dir) {
 }
 
 zString zString::translate(char space) const {
-    static cstr russion     = "А Б В Г Д Е Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я "
-                              "а б в г д е ж з и й к л м н о п р с т у ф х ц ч ш щ ъ ы ь э ю я ";
+//  static cstr russian     = "А Б В Г Д Е Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я "
+//                            "а б в г д е ж з и й к л м н о п р с т у ф х ц ч ш щ ъ ы ь э ю я ";
     static cstr translate   = "A B V G D E GZZ I Y K L M N O P R S T U F H C CHSHSCQ IYW X JUJA"
                               "a b v g d e gzz i y k l m n o p r s t u f h c chshscq iyw x juja";
     zString n; u8 ch;
@@ -294,7 +292,7 @@ zString zString::translate(char space) const {
 zString z_guid() {
     static cstr templ("xxxxxxxx-xxxx-zxxx-yxxx-xxxxxxxxxxxx");
     static char GUID[40];
-    zRand rand;
+    static cstr hex("0123456789ABCDEF-");
     for(int t = 0; t < 37; t++) {
         auto r(zRand::nextInt(16)); char c(' ');
         switch(templ[t]) {
@@ -343,14 +341,18 @@ zString z_base64Encode(const u8* ptr, u32 size) {
 
 }
 
+static u8 z_base64find(u8 ch) {
+    return (u8)(z_strchr((char*)base64_chars, ch) - base64_chars);
+}
+
 zString z_base64Decode(cstr ptr, i32 size) {
-    int i(0), j, in_(0);
+    int i(0), j(0), in_(0);
     u8 char_array_4[4], char_array_3[3];
     zString ret;
     while(size-- && (ptr[in_] != '=') && is_base64(ptr[in_])) {
         char_array_4[i++] = ptr[in_]; in_++;
         if(i == 4) {
-            for(i = 0; i < 4; i++) char_array_4[i] = base64_chars[char_array_4[i]];
+            for(i = 0; i < 4; i++) char_array_4[i] = z_base64find(char_array_4[i]);
             char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
             char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
             char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
@@ -360,7 +362,7 @@ zString z_base64Decode(cstr ptr, i32 size) {
     }
     if(i) {
         for(j = i; j < 4; j++) char_array_4[j] = 0;
-        for(j = 0; j < 4; j++) char_array_4[j] = base64_chars[char_array_4[j]];
+        for(j = 0; j < 4; j++) char_array_4[j] = z_base64find(char_array_4[j]);;
         char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
         char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
         char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
@@ -374,8 +376,10 @@ zString z_urlEncode(cstr _buf) {
     auto _ptr(ptr.buffer()); char ch;
     while((ch = *_buf++)) {
         if(!isalnum(ch) && ch != '.' && ch != '-' && ch != '_' && ch != '~') {
-            *_ptr++ = '%'; *_ptr++ = hex[(ch & 240) >> 4];
-            ch = hex[ch & 15];
+            auto s(z_toHex(ch));
+            *_ptr++ = '%';
+            *_ptr++ = s[0];
+            ch = s[1];
         }
         *_ptr++ = ch;
     }
@@ -384,13 +388,17 @@ zString z_urlEncode(cstr _buf) {
 }
 
 zString z_urlDecode(cstr buf) {
+    auto _str(buf);
     auto _buf((char*)buf); char ch;
-    while((ch = *_buf++)) {
-        if(ch == '%') ch = z_toHex(&_buf);
+    while((ch = *buf++)) {
+        if(ch == '%') {
+            auto _ch(z_fromHex(*buf++) << 4);
+            ch = (char)(z_fromHex(*buf++) | _ch);
+        }
         *_buf++ = ch;
     }
     *_buf = 0;
-    return {buf};
+    return { _str };
 }
 
 zString z_fmt(cstr fmt, ...) {

@@ -57,7 +57,7 @@ class zColor {
 public:
 	zColor() noexcept { set(0xffffffff); }
 	zColor(u32 argb) { set(argb); }
-	zColor(cstr str);
+	zColor(cstr str) { from(str); }
 	zColor(float _r, float _g, float _b, float _a) { make(_r, _g, _b, _a); }
 	operator const float*() const { return vec; }
     float operator [](int index) const { return vec[index]; }
@@ -65,7 +65,7 @@ public:
 	void set(u32 argb);
 	u32 toARGB() const;
 	u32 toABGR() const;
-	const zColor& from(cstr s);
+	static zColor from(cstr s);
 	u8* state(u8* ptr, bool save);
 	union {
 		struct { float r, g, b, a; };
