@@ -11,6 +11,10 @@ public:
     static int nextInt(int _e) { return (int)resolve(0, _e); }
     static long nextLong(int _b, int _e) { return resolve(_b, _e); }
     static bool nextBoolean() { return resolve(0, 2) != 0; }
+    static u32 nextColor(int a) {
+        auto r(nextInt(32, 256) << 16), g(nextInt(32, 256) << 8), b(nextInt(32, 256));
+        return ((a << 24) | r | g | b);
+    }
 protected:
     static long seed;
     static long resolve(int _b, int _e) {

@@ -7,6 +7,10 @@ float* z_mtx_vec3(float* m, float* v3);
 float* z_mtx_vec4(float* m, float* v4);
 float* z_mtx_mtx(const float* m1, const float* m2);
 
+inline int z_round(float f) {
+    return (int)roundf(f);
+}
+
 // остаток от деления для вещественных чисел
 inline float z_modf(float x, float y) {
 	return (x - y *(int)(x / y));
@@ -57,10 +61,11 @@ class zColor {
 public:
 	zColor() noexcept { set(0xffffffff); }
 	zColor(u32 argb) { set(argb); }
-	zColor(cstr str) { from(str); }
+	zColor(cstr str) { *this = from(str); }
 	zColor(float _r, float _g, float _b, float _a) { make(_r, _g, _b, _a); }
 	operator const float*() const { return vec; }
-    float operator [](int index) const { return vec[index]; }
+	const float& operator [](int index) const { return vec[index]; }
+	float& operator [](int index) { return vec[index]; }
 	void make(float _r, float _g, float _b, float _a) { vec[0] = _r; vec[1] = _g; vec[2] = _b; vec[3] = _a; }
 	void set(u32 argb);
 	u32 toARGB() const;
@@ -69,7 +74,7 @@ public:
 	u8* state(u8* ptr, bool save);
 	union {
 		struct { float r, g, b, a; };
-		float vec[4];
+		float vec[4]{};
 	};
 	static zColor shadow;
 	static zColor red;
@@ -197,34 +202,34 @@ public:
     bool operator == (const zRect<T>& r) const { return x == r.x && y == r.y && w == r.w && h == r.h; }
     bool operator != (const zRect<T>& r) const { return !(operator == (r)); }
 	T extent(bool vert) const { return buf[vert] + buf[vert + 2]; }
-	zPoint<T> center() const { return zPoint<T>(x + w / 2, y + h / 2); }
-	const zRect<T>& operator = (const zRect<T>& r) { x = r.x; y = r.y; w = r.w; h = r.h; return *this; }
-	const zRect<T>& operator = (const zPoint<T>& p) { x = p.x; y = p.y; return *this; }
-	const zRect<T>& operator = (const zSize<T>& s) { w = s.w; h = s.h; return *this; }
-	const zRect<T>& operator * (const T& f) { x *= f; y *= f; w *= f; h *= f; return *this; }
-	const zRect<T>& operator += (const zPoint<T>& f) { x += f.x; y += f.y; return *this; }
-	const zRect<T>& operator += (const zSize<T>& f) { w += f.w; h += f.h; return *this; }
-	const zRect<T>& operator -= (const zPoint<T>& f) { x -= f.x; y -= f.y; return *this; }
-	const zRect<T>& operator -= (const zSize<T>& f) { w -= f.w; h -= f.h; return *this; }
-	const zRect<T>& operator += (const zRect<T>& f) { x += f.x; y += f.y; return *this; }
-	const zRect<T>& operator -= (const zRect<T>& f) { x -= f.x; y -= f.y; return *this; }
-	zRect<T> operator + (const zRect<T>& f) { return zRect<T>(x + f.x, y + f.y, w, h); }
-	zRect<T> operator - (const zRect<T>& f) { return zRect<T>(x - f.x, y - f.y, w, h); }
-	zRect<T> operator + (const zPoint<T>& f) { return zRect<T>(x + f.x, y + f.y, w, h); }
-	zRect<T> operator + (const zSize<T>& f) { return zRect<T>(x, y, w + f.w, h + f.h); }
-	zRect<T> operator - (const zPoint<T>& f) { return zRect<T>(x - f.x, y - f.y, w, h); }
-	zRect<T> operator - (const zSize<T>& f) { return zRect<T>(x, y, w - f.w, h - f.h); }
-	const zRect<T>& set(const T& _x, const T& _y, const T& _w, const T& _h) { x = _x; y = _y; w = _w; h = _h; return *this; }
-    const zRect<T>& set(const u32 _val) { return set((u8*)&_val); }
+	auto center() const { return zPoint<T>(x + w / 2, y + h / 2); }
+	auto operator = (const zRect<T>& r) { x = r.x; y = r.y; w = r.w; h = r.h; return *this; }
+	auto operator = (const zPoint<T>& p) { x = p.x; y = p.y; return *this; }
+	auto operator = (const zSize<T>& s) { w = s.w; h = s.h; return *this; }
+	auto operator * (const T& f) { x *= f; y *= f; w *= f; h *= f; return *this; }
+	auto operator += (const zPoint<T>& f) { x += f.x; y += f.y; return *this; }
+	auto operator += (const zSize<T>& f) { w += f.w; h += f.h; return *this; }
+	auto operator -= (const zPoint<T>& f) { x -= f.x; y -= f.y; return *this; }
+	auto operator -= (const zSize<T>& f) { w -= f.w; h -= f.h; return *this; }
+	auto operator += (const zRect<T>& f) { x += f.x; y += f.y; return *this; }
+	auto operator -= (const zRect<T>& f) { x -= f.x; y -= f.y; return *this; }
+	auto operator + (const zRect<T>& f) { return zRect<T>(x + f.x, y + f.y, w, h); }
+	auto operator - (const zRect<T>& f) { return zRect<T>(x - f.x, y - f.y, w, h); }
+	auto operator + (const zPoint<T>& f) { return zRect<T>(x + f.x, y + f.y, w, h); }
+	auto operator + (const zSize<T>& f) { return zRect<T>(x, y, w + f.w, h + f.h); }
+	auto operator - (const zPoint<T>& f) { return zRect<T>(x - f.x, y - f.y, w, h); }
+	auto operator - (const zSize<T>& f) { return zRect<T>(x, y, w - f.w, h - f.h); }
+	auto set(const T& _x, const T& _y, const T& _w, const T& _h) { x = _x; y = _y; w = _w; h = _h; return *this; }
+	auto set(const u32 _val) { return set((u8*)&_val); }
 	template <typename R> const zRect<T>& set(const R* ptr) {
 		if(ptr) x = ptr[0], y = ptr[1], w = ptr[2], h = ptr[3]; else empty();
 		return *this;
 	}
-	const zRect<T>& offset(const T& horz, const T& vert) { x += horz; y += vert; return *this; }
-	const zRect<T>& scale(const T& horz, const T& vert) { w *= vert; h *= vert; return *this; }
-    zRect<T> padding(const T& horz, const T& vert) { return zRect<T>(x + horz, y + vert, w - horz * 2, h - vert * 2); }
-	zRect<T> padding(const zPoint<T> &p) { return zRect<T>(x + p.x, y + p.y, w - p.x * 2, h - p.y * 2); }
-	zRect<T> padding(const zRect<T> &r) { return zRect<T>(x + r.x, y + r.y, w - (r.w + r.x), h - (r.h + r.y)); }
+	auto offset(const T& horz, const T& vert) { x += horz; y += vert; return *this; }
+	auto scale(const T& horz, const T& vert) { w *= vert; h *= vert; return *this; }
+	auto padding(const T& horz, const T& vert) { return zRect<T>(x + horz, y + vert, w - horz * 2, h - vert * 2); }
+	auto padding(const zPoint<T> &p) { return zRect<T>(x + p.x, y + p.y, w - p.x * 2, h - p.y * 2); }
+	auto padding(const zRect<T> &r) { return zRect<T>(x + r.x, y + r.y, w - (r.w + r.x), h - (r.h + r.y)); }
 	zRect<T> dimens(float sw);
 	const zRect<T>& from(cstr s);
 	u8* state(u8* ptr, bool save);

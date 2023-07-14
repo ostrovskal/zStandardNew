@@ -150,11 +150,9 @@ int zHtml::getIntegerAttr(cstr name, int radix, int def) {
     return ret.isNotEmpty() ? z_ston<int>(ret.str(), radix) : def;
 }
 
-int zHtml::getColorAttr(cstr name, int def) {
+u32 zHtml::getColorAttr(cstr name, u32 def) {
     auto ret(findValueAttribute(name));
-    ret.remove('#');
-    auto a((ret.count() < 7) * 0xff000000);
-    return ret.isNotEmpty() ? (int)(a | z_ston<u32>(ret.str(), RADIX_HEX)) : def;
+    return (ret.isNotEmpty() ? zColor(ret).toARGB() : def);
 }
 
 float zHtml::getFloatAttr(cstr name, float def) {

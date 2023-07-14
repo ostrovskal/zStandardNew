@@ -61,12 +61,10 @@ public:
 	T& operator [] (int idx) const noexcept { return at(idx); }
 	// вернуть последний элемент
 	T& last() const noexcept { return data[count - 1]; }
+	// развернуть
+	void reverse() { for(int i = 0 ; i < count / 2; i++) std::swap(data[i], data[count - i - 1]); }
     // обмен значениями
-    void swap(int idx1, int idx2) {
-        if(idx1 < count && idx2 < count) {
-			std::swap(data[idx1], data[idx2]);
-        }
-    }
+    void swap(int idx1, int idx2) { if(idx1 < count && idx2 < count) std::swap(data[idx1], data[idx2]); }
 	// оператор переноса
 	const zArray& operator = (zArray<T>&& src) noexcept {
 		clear();

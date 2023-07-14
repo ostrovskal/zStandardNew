@@ -17,7 +17,7 @@ public:
     // вернуть целое значение атрибута
     int getIntegerAttr(cstr name, int radix, int def);
     // вернуть цветовое значение атрибута
-    int getColorAttr(cstr name, int def);
+    u32 getColorAttr(cstr name, u32 def);
     // вернуть вещественное значение атрибута
     float getFloatAttr(cstr name, float def);
     // текущая строка
