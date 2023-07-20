@@ -8,7 +8,7 @@
 class zSettings {
 public:
     struct ZOPTION {
-        enum class TOPTION { _unk, _hex, _int, _bol, _byt, _mru, _pth };
+        enum class TOPTION { _unk, _flt, _hex, _int, _bol, _byt, _mru, _pth };
         ZOPTION() { }
         ZOPTION(zStringUTF8 _name, zStringUTF8 _value, TOPTION _type, int _offs) : name(_name), value(_value), type(_type), offs(_offs) { }
         bool operator == (cstr nm) const { return name == nm; }

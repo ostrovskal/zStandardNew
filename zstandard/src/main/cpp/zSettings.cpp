@@ -15,13 +15,14 @@ zSettings::zSettings(cstr root, cstr* opts) {
         auto isname(name.isNotEmpty());
         if(!isname) {
             // поиск значений
-            auto cat(o.substrAfterLast(",").substrBeforeLast("]").lower());
-            if(cat == "byt")      t = ZOPTION::TOPTION::_byt, plus = 1;
-            else if(cat == "bol") t = ZOPTION::TOPTION::_bol, plus = 1;
-            else if(cat == "hex") t = ZOPTION::TOPTION::_hex, plus = 4;
-            else if(cat == "int") t = ZOPTION::TOPTION::_int, plus = 4;
-            else if(cat == "mru") t = ZOPTION::TOPTION::_mru, plus = 0;
-            else if(cat == "pth") t = ZOPTION::TOPTION::_pth, plus = 0;
+            auto cat(o.substrAfterLast("[").substrBeforeLast("]").lower());
+            if(cat == "bytes")          t = ZOPTION::TOPTION::_byt, plus = 1;
+            else if(cat == "boolean")   t = ZOPTION::TOPTION::_bol, plus = 1;
+            else if(cat == "hex")       t = ZOPTION::TOPTION::_hex, plus = 4;
+            else if(cat == "float")     t = ZOPTION::TOPTION::_flt, plus = 4;
+            else if(cat == "integer")   t = ZOPTION::TOPTION::_int, plus = 4;
+            else if(cat == "mru")       t = ZOPTION::TOPTION::_mru, plus = 0;
+            else if(cat == "path")      t = ZOPTION::TOPTION::_pth, plus = 0;
             name = o;
         }
         defs += ZOPTION(name, o.substrAfter("="), t, offs);
@@ -48,6 +49,9 @@ void zSettings::init(u8* ptr, cstr name) {
 void zSettings::setOption(u8* ptr, const ZOPTION& opt) {
     auto v(opt.value.str()); auto o(opt.offs), radix(RADIX_DEC);
     switch(opt.type) {
+        case ZOPTION::TOPTION::_flt:
+            *(float*)(ptr + o) = z_ston<float>(v, RADIX_FLT);
+            break;
         case ZOPTION::TOPTION::_hex:
             radix = RADIX_HEX;
         case ZOPTION::TOPTION::_int:
@@ -73,6 +77,11 @@ zStringUTF8 zSettings::getOption(const u8* ptr, int idx) {
     u32 n; int radix(RADIX_DEC); cstr ret;
     auto opt(defs[idx]); auto o(opt.offs);
     switch(opt.type) {
+        case ZOPTION::TOPTION::_flt: {
+            auto f(*(float*)(ptr + o));
+            ret = z_ntos(&f, RADIX_FLT, true);
+            break;
+        }
         case ZOPTION::TOPTION::_hex:
             radix = RADIX_HEX;
         case ZOPTION::TOPTION::_int:
@@ -96,7 +105,7 @@ zStringUTF8 zSettings::getOption(const u8* ptr, int idx) {
             ret = "";
             break;
     }
-    return zStringUTF8(ret);
+    return { ret };
 }
 
 void zSettings::save(u8* ptr, cstr name) {
