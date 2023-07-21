@@ -245,7 +245,7 @@ const zStringUTF8& zStringUTF8::translate(cstr space) {
                               "a b v g d e oegzz i y k l m n o p r s t u f h c chshscq iyw x juja";
     auto _str(buffer()); cstr _eng; int sizeEng, sizeSpace(z_sizeUTF8(space));
     while(*_str) {
-        auto _rus(is_chars(_str, russian, 98));
+        auto _rus(is_chars(_str, russian, 99));
         if(_rus) {
             auto sizeRus(z_charLengthUTF8(_rus));
             auto idx((_rus - russian) / sizeRus);
