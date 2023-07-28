@@ -20,6 +20,6 @@ zTga::zTga(u8* _ptr, u32 _size) {
     }
 }
 
-bool zTga::save(const zStringUTF8& path) {
+bool zTga::save(const zString8& path) {
     return z_tgaSaveFile(path, ptr, width, height, comp);
 }

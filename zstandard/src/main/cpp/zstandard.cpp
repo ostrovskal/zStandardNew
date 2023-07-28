@@ -136,7 +136,7 @@ char* z_ntos(void* v, i32 r, bool sign, int size, char** end) {
         case RADIX_BIN:
             n = *(u32*)v;
             if(sign && (i32)n < 0) { sgn = '-'; i32* nn((i32*)&n); *nn = -*nn; }
-            while(size--) { *--buf = (char)sym[(u8)(n & c)]; n >>= s; }
+            do { *--buf = (char)sym[(u8)(n & c)]; n >>= s; size--; } while(n || size > 0);
             if(sgn) *--buf = (char)sgn;
             break;
         case RADIX_FLT: d = (double)(*(float*)v);
@@ -273,7 +273,7 @@ u8* z_rle_decompress(u8* in, int size, int nsize) {
 }
 
 char* z_fmtValue(i32 value, u32 offs, bool hex, i32 radix, bool _showHex) {
-    static const char* fmtTypes[] = {
+    static cstr fmtTypes[] = {
             "3X", "2X", "3X ", "2X ",
             "5(X)", "4(#X)", "3(X)", "2(#X)",
             "3X)", "2#X)",
@@ -293,7 +293,7 @@ char* z_fmtValue(i32 value, u32 offs, bool hex, i32 radix, bool _showHex) {
     else if(offs == ZFV_DECIMAL) hex = false;
     auto buffer(_buffer), tmp(buffer);
     auto rdx((int)(offs + (hex ? _showHex : 0)));
-    auto res(z_ntos(&value, radix == 0 ? rdx & 1 : radix, true, 4, &end));
+    auto res(z_ntos(&value, radix == 0 ? rdx & 1 : radix, true, 0, &end));
     auto spec(fmtTypes[rdx]); auto lnum((spec[0] - '0') - (end - res));
     bool znak(false);
     while((ch = *++spec)) {
@@ -398,9 +398,9 @@ static const u16 cp1251_2uni[128] = {
         0x0448, 0x0449, 0x044a, 0x044b, 0x044c, 0x044d, 0x044e, 0x044f,
 };
 
-int z_decodeUTF8(u32 ch) {
+int z_decode8(u32 ch) {
     int r(0);
-    switch(z_charLengthUTF8((cstr)&ch)) {
+    switch(z_charLength8((cstr)&ch)) {
         case 1: return (int)ch;
         case 2: r = (int)(((ch & 0b0000000000011111) << 6) | ((ch & 0b00111111'00000000) >> 8)); break;
         case 3: r = (int)(((ch & 0b00000000'00000000'00001111) << 12) | ((ch & 0b00000000'00111111'00000000) >> 2) |
@@ -412,29 +412,29 @@ int z_decodeUTF8(u32 ch) {
     return ((r >= 0x410 && r <= 0x44f) ? (0xC0 + (r - 0x410)) : '?');
 }
 
-int z_encodeUTF8(u32 ch) {
+int z_encode8(u32 ch) {
     if(ch < 0x80) return (int)ch;
     auto wc(cp1251_2uni[ch - 0x80]);
     return (wc == 0xfffd ? '?' : ((wc & 0b00000000'00111111) << 8) | (((wc & 0b00000111'11000000) >> 6) | 0b10000000'11000000));
 }
 
-zStringUTF8 z_cp1251ToUtf8(const zString& src) {
+zString8 z_cp1251ToUtf8(const zString& src) {
     auto len(src.length()); auto _src((u8*)src.str());
     auto tmp(std::unique_ptr<char>(new char[(len + 1) * 4])); auto _tmp(tmp.get());
     for(int i = 0; i < len; i++) {
-        *(int*)_tmp = z_encodeUTF8(*_src++);
-        _tmp += z_charLengthUTF8(_tmp);
+        *(int*)_tmp = z_encode8(*_src++);
+        _tmp += z_charLength8(_tmp);
     }
     *_tmp = 0;
     return {tmp.get()};
 }
 
-zString z_utf8ToCp1251(const zStringUTF8& src) {
+zString z_utf8ToCp1251(const zString8& src) {
     auto len(src.count()); auto _src(src.str());
     auto tmp(std::unique_ptr<char>(new char[(len + 1)])); auto _tmp(tmp.get());
     for(int i = 0 ; i < len; i++) {
-        *_tmp++ = (char)z_decodeUTF8(z_charUTF8(_src));
-        _src += z_charLengthUTF8(_src);
+        *_tmp++ = (char)z_decode8(z_char8(_src));
+        _src += z_charLength8(_src);
     }
     *_tmp = 0;
     return { tmp.get() };

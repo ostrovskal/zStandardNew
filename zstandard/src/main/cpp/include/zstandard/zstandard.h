@@ -100,55 +100,55 @@ struct HEADER_WAV {
 #include "zTypes.h"
 
 // вернуть длину символа
-inline i32 z_charLengthUTF8(cstr _str) {
+inline i32 z_charLength8(cstr _str) {
     static u8 length[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 4 };
     return length[(((*_str) & 0b11110000) >> 4)];
 }
 
 // вернуть символ
-inline int z_charUTF8(cstr _str, i32* length = nullptr) {
+inline int z_char8(cstr _str, i32* length = nullptr) {
     static u32 mask[] = { 0, 0xff, 0xffff, 0xffffff, 0xffffffff };
-    i32 l(z_charLengthUTF8(_str)); if(length) *length = l;
+    i32 l(z_charLength8(_str)); if(length) *length = l;
     return (*(int*)_str & mask[l]);
 }
 
 // определение пустой строки
-inline bool z_isUTF8(cstr _str) {
+inline bool z_is8(cstr _str) {
     return _str && *_str;
 }
 
 // вернуть адрес в строке по индексу
-inline cstr z_ptrUTF8(cstr _str, i32 idx) {
-    while(idx-- > 0 && z_isUTF8(_str)) _str += z_charLengthUTF8(_str);
+inline cstr z_ptr8(cstr _str, i32 idx) {
+    while(idx-- > 0 && z_is8(_str)) _str += z_charLength8(_str);
     return _str;
 }
 
 // безопасное определение размера строки
-inline i32 z_sizeUTF8(cstr _str, i32 count = INT_MAX) {
-    return (i32)(z_ptrUTF8(_str, count) - _str);
+inline i32 z_size8(cstr _str, i32 count = INT_MAX) {
+    return (i32)(z_ptr8(_str, count) - _str);
 }
 
 // безопасное определение количества символов в строке
-inline i32 z_countUTF8(cstr _str) {
+inline i32 z_count8(cstr _str) {
     i32 count(0);
-    while(z_isUTF8(_str)) _str += z_charLengthUTF8(_str), count++;
+    while(z_is8(_str)) _str += z_charLength8(_str), count++;
     return count;
 }
 
 // сравнение строк
-inline int z_strcmpUTF8(cstr _str1, cstr _str2) {
-    auto size1(z_sizeUTF8(_str1)), size2(z_sizeUTF8(_str2));
+inline int z_strcmp8(cstr _str1, cstr _str2) {
+    auto size1(z_size8(_str1)), size2(z_size8(_str2));
     if(size1 == size2) return strncmp(_str1, _str2, size1);
     if(size1 > size2) return 1;
     return -1;
 }
 
 // сравнение строк
-inline int z_strncmpUTF8(cstr _str1, cstr _str2, i32 _size) {
+inline int z_strncmp8(cstr _str1, cstr _str2, i32 _size) {
     i32 l1, l2; int ch;
     if(_size == 0) return 0;
     // берем символы из строк и сравниваем их
-    while((ch = z_charUTF8(_str1, &l1)) == z_charUTF8(_str2, &l2)) {
+    while((ch = z_char8(_str1, &l1)) == z_char8(_str2, &l2)) {
         // проверка на размеры
         if(l1 != l2) break;
         // проверка на конец строки
@@ -159,17 +159,17 @@ inline int z_strncmpUTF8(cstr _str1, cstr _str2, i32 _size) {
     return 1;
 }
 
-inline int z_sizeCountUTF8(cstr first, cstr end) {
+inline int z_sizeCount8(cstr first, cstr end) {
     int count(0);
-    while(first < end) first += z_charLengthUTF8(first), count++;
+    while(first < end) first += z_charLength8(first), count++;
     return count;
 }
 
 // поиск строки в строке
-inline int z_strstrUTF8(cstr _str1, cstr _str2) {
+inline int z_strstr8(cstr _str1, cstr _str2) {
     cstr ret(nullptr);
-    if(z_isUTF8(_str1)) ret = strstr(_str1, _str2);
-    auto idx(z_sizeCountUTF8(_str1, ret));
+    if(z_is8(_str1)) ret = strstr(_str1, _str2);
+    auto idx(z_sizeCount8(_str1, ret));
     return ret ? idx : -1;
 }
 
@@ -445,15 +445,15 @@ struct HZIP {
 
 #define _zipClose(hz)    { hz->zip ? zipClose(hz->zip) : unzClose(hz->unz); }
 
-int z_decodeUTF8(u32 ch);
-int z_encodeUTF8(u32 ch);
+int z_decode8(u32 ch);
+int z_encode8(u32 ch);
 
 #include "zZip.h"
 #include "zUnzip.h"
 #include "zRand.h"
 #include "zArray.h"
 #include "zString.h"
-#include "zStringUTF8.h"
+#include "zString8.h"
 #include "zFile.h"
 #include "zJSON.h"
 #include "zXml.h"
@@ -463,16 +463,16 @@ int z_encodeUTF8(u32 ch);
     #include "zGRef.h"
 #endif
 
-zStringUTF8 z_cp1251ToUtf8(const zString& src);
-zString z_utf8ToCp1251(const zStringUTF8& src);
+zString8 z_cp1251ToUtf8(const zString& src);
+zString z_utf8ToCp1251(const zString8& src);
 
-template<typename T> void z_logBuffer(const zStringUTF8& tips, const T& elem, int size = 128, bool hex = false, bool show = false) {
+template<typename T> void z_logBuffer(const zString8& tips, const T& elem, int size = 128, bool hex = false, bool show = false) {
     static int count(0);
     static T* buf(nullptr);
     if(!buf) { buf = new T[size]; memset(buf, 0, sizeof(T) * size); }
     if(count < size) buf[count++] = elem;
     if(count >= size || show) {
-        zStringUTF8 tmp(tips);
+        zString8 tmp(tips);
         for(int i = 0 ; i < count; i++) {
             tmp.appendNotEmpty(", ");
             tmp += z_ntos(&buf[i], hex, !hex, sizeof(T));

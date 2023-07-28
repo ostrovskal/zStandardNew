@@ -21,20 +21,19 @@ zColor zColor::from(cstr _s) {
 							 "fuchsia", "lime", "olive", "teal", "aqua", "gray" };
 	static u32 cValues[] = { 0xff000000, 0xffff0000, 0xff0000ff, 0xff008000, 0xfff0f000, 0xffffffff, 0xffc0c0c0, 0xff800000,
 							 0xff000080, 0xff800080, 0xffff00ff, 0xff00ff00, 0xff808000, 0xff008080, 0xff00ffff, 0xff808080 };
-	zStringUTF8 s(_s);
-	for(int i = 0 ; i < 16; i++) {
-		if(s == cNames[i]) return { cValues[i] };
-	}
+	zString8 s(_s);
 	// удалить префиксы(если есть)
-	s.remove("#"); s.remove("0x");
+	s.remove("#"); s.remove("0x"); s.lower();
+    auto idx(s.indexOf(cNames, 16));
+    if(idx != -1) return { cValues[idx] };
 	u32 argb(0xffffffff);
 	if(s.count() == 3) {
 		auto r(s[0]), g(s[1]), b(s[2]);
-		s = z_fmtUTF8("ff%c%c%c%c%c%c", r, r, g, g, b, b);
+		s = z_fmt8("ff%c%c%c%c%c%c", r, r, g, g, b, b);
 	}
 	auto l(s.count());
 	if(l < 7) {
-		zStringUTF8 t('f', 8 - l);
+		zString8 t('f', 8 - l);
 		s.insert(0, t); l = 8;
 	}
 	if(l > 7) l = 8;

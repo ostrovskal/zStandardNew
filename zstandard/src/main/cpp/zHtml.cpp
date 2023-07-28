@@ -8,7 +8,7 @@
 int zHtml::next(int* len) {
     int ch(0), ll(0);
     if(start < end) {
-        ch = z_charUTF8(start, &ll);
+        ch = z_char8(start, &ll);
         if(ch == '\n') line++;
     }
     if(len) *len = ll; else start += ll;
@@ -16,11 +16,11 @@ int zHtml::next(int* len) {
 }
 
 zHtml::zHtml(cstr _text, const std::function<bool (cstr, bool, zHtml*)>& parser) {
-    text = decode((u8*)_text, z_sizeUTF8(_text), parser);
+    text = decode((u8*)_text, z_size8(_text), parser);
 }
 
-zStringUTF8 zHtml::decode(u8* ptr, i32 size, const std::function<bool (cstr, bool, zHtml*)>& _parser) {
-    zStringUTF8 stkHtml((cstr)ptr, z_sizeCountUTF8((cstr)ptr, (cstr)ptr + size));
+zString8 zHtml::decode(u8* ptr, i32 size, const std::function<bool (cstr, bool, zHtml*)>& _parser) {
+    zString8 stkHtml((cstr)ptr, z_sizeCount8((cstr)ptr, (cstr)ptr + size));
     line = 1; stkHtml.trim();
     start = stkHtml.buffer(); html = start;
     end = start + stkHtml.size();
@@ -29,7 +29,7 @@ zStringUTF8 zHtml::decode(u8* ptr, i32 size, const std::function<bool (cstr, boo
     return text;
 }
 
-zStringUTF8 zHtml::getValue(char delim) {
+zString8 zHtml::getValue(char delim) {
     int len; start += (*start == '\"');
     auto _s(start); int count(0);
     // определить конец значения
@@ -37,12 +37,12 @@ zStringUTF8 zHtml::getValue(char delim) {
         if(next(&len) == delim) break;
         start += len; count++;
     }
-    zStringUTF8 v(_s, count);
+    zString8 v(_s, count);
     start += (*start == '\"');
     return v.replaceAmp(true);
 }
 
-zStringUTF8 zHtml::getName() {
+zString8 zHtml::getName() {
     z_skip_spc(&start, line); auto _s(start); int count(0);
     while(start < end && !z_delimiter(*start)) next(nullptr), count++;
     return { _s, count };
@@ -57,7 +57,7 @@ bool zHtml::skipComment() {
     return false;
 }
 
-bool zHtml::parser(const zStringUTF8& _tag, const std::function<bool (cstr, bool, zHtml*)>& _parser) {
+bool zHtml::parser(const zString8& _tag, const std::function<bool (cstr, bool, zHtml*)>& _parser) {
     while(start < end) {
         // текст до начала тега
         text += getValue('<');
@@ -111,7 +111,7 @@ bool zHtml::parser(const zStringUTF8& _tag, const std::function<bool (cstr, bool
                 // проверить - конец тега/начало совпадают?
                 if(tag != _tag) {
                     ILOG("begin<%s> - end<%s>!!!", _tag.str(), tag.str());
-                    ILOG("line:%i position:%i", line, z_sizeCountUTF8(html, start));
+                    ILOG("line:%i position:%i", line, z_sizeCount8(html, start));
                     return false;
                 }
             }
@@ -132,17 +132,17 @@ bool zHtml::parser(const zStringUTF8& _tag, const std::function<bool (cstr, bool
     return true;
 }
 
-zStringUTF8 zHtml::findValueAttribute(cstr name) const {
-    zStringUTF8 value;
+zString8 zHtml::findValueAttribute(cstr name) const {
+    zString8 value;
     for(int i = 0 ; i < attrs.size(); i += 2) {
         if(attrs[i] == name) { value = attrs[i + 1]; break; }
     }
     return value;
 }
 
-zStringUTF8 zHtml::getStringAttr(cstr name, cstr def) {
+zString8 zHtml::getStringAttr(cstr name, cstr def) {
     auto ret(findValueAttribute(name));
-    return ret.isNotEmpty() ? ret : zStringUTF8(def);
+    return ret.isNotEmpty() ? ret : zString8(def);
 }
 
 int zHtml::getIntegerAttr(cstr name, int radix, int def) {

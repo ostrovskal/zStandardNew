@@ -42,7 +42,7 @@ static int writer(char* data, size_t size, size_t nmemb, zHttpRequest::DynBuffer
     return result;
 }
 
-zStringUTF8 zHttpRequest::getRedirect() const {
+zString8 zHttpRequest::getRedirect() const {
     char* redir(nullptr); 
     if(curl) curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &redir); 
     return { redir };
@@ -51,7 +51,7 @@ zStringUTF8 zHttpRequest::getRedirect() const {
 void zHttpRequest::setAuth(cstr login, cstr pwd, int type) const {
     if(curl) {
         curl_easy_setopt(curl, CURLOPT_HTTPAUTH, type);
-        zStringUTF8 auth(login); auth += ":"; auth += pwd;
+        zString8 auth(login); auth += ":"; auth += pwd;
         curl_easy_setopt(curl, CURLOPT_USERPWD, auth.str());
     }
 }
@@ -149,7 +149,7 @@ void zHttpRequest::changeHeaders(czs& what, czs& value) {
     struct curl_slist* tmp(nullptr), *each(hs);
     while(each) {
         auto origin(each->data);
-        if(z_strstrUTF8(origin, what) != 0) tmp = curl_slist_append(tmp, origin);
+        if(z_strstr8(origin, what) != 0) tmp = curl_slist_append(tmp, origin);
         each = each->next;
     }
     curl_slist_free_all(hs); hs = tmp;
@@ -168,8 +168,8 @@ bool zHttpRequest::exec(czs& url, bool nobody) {
     return code == CURLE_OK;
 }
 
-zStringUTF8 zHttpRequest::getCookieList() const {
-    zStringUTF8 _cookie;
+zString8 zHttpRequest::getCookieList() const {
+    zString8 _cookie;
     if(curl) {
         struct curl_slist* cookies(nullptr);
         auto result(curl_easy_getinfo(curl, CURLINFO_COOKIELIST, &cookies));
@@ -191,8 +191,8 @@ zStringUTF8 zHttpRequest::getCookieList() const {
     return _cookie;
 }
 
-zStringUTF8 zHttpRequest::getHeaders(bool out) const {
-    zStringUTF8 headers;
+zString8 zHttpRequest::getHeaders(bool out) const {
+    zString8 headers;
     if(!out) {
         auto tmp(hs);
         while(tmp) {

@@ -52,7 +52,7 @@ inline int z_mod(int y, int z) {
 
 #define Z_EPSILON	(1e-06)
 #define Z_EPSILON2	(Z_EPSILON * Z_EPSILON)
-#define Z_PI		3.14f
+#define Z_PI		3.1415926535897932385f
 #define Z_HALF_PI	(0.5f * Z_PI)
 #define Z_DEG2RAD	(Z_PI / 180.0f)
 #define Z_RAD2DEG	(180.0f / Z_PI)

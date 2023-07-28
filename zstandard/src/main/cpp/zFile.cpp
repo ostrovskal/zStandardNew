@@ -89,7 +89,7 @@ void* zFile::readn(int* psize, int size, int pos, int mode) const {
     return ptr;
 }
 
-zStringUTF8 zFile::readStringUTF8(int pos, int mode) const {
+zString8 zFile::readString8(int pos, int mode) const {
     return z_cp1251ToUtf8(readString(pos, mode));
 }
 
@@ -111,8 +111,8 @@ zString zFile::readString(int pos, int mode) const {
     return tmp;
 }
 
-zArray<zStringUTF8> zFile::strings() const {
-    zArray<zStringUTF8> arr; zStringUTF8 str;
+zArray<zString8> zFile::strings() const {
+    zArray<zString8> arr; zString8 str;
     while((str = readString()).isNotEmpty()) arr += str;
     return arr;
 }
@@ -198,7 +198,7 @@ zArray<zFile::zFileInfo> zFile::find(cstr path, cstr _msk) {
     zArray<zFileInfo> fl;
     static char fname[260];
     DIR* dir; struct dirent* ent; zFileInfo info{};
-    zStringUTF8 msk(_msk); auto am(msk.split("*"));
+    zString8 msk(_msk); auto am(msk.split("*"));
     if((dir = opendir(path))) {
         while((ent = readdir(dir))) {
             if((strncmp(ent->d_name, ".", PATH_MAX) == 0) || (strncmp(ent->d_name, "..", PATH_MAX) == 0)) continue;

@@ -27,7 +27,7 @@ add_library(zstandard STATIC
         zJniHelper.cpp
         zInterpolator.cpp
         gl3stub.cpp
-        zStringUTF8.cpp
+        zString8.cpp
         zTga.cpp
         zCloudMail.cpp
         zCloudYandex.cpp

@@ -16,7 +16,7 @@ public:
         // признак папки
         bool folder{false};
         // полный путь/расширение
-        zStringUTF8 path, ext;
+        zString8 path, ext;
     };
     // конструктор
     zCloud(cstr _host, cstr _login, cstr _password) : login(_login), password(_password), host(_host), js(req.json()) { }
@@ -31,7 +31,7 @@ public:
     // загрузка файла
     virtual bool upload(czs& dstPath, czs& srcPath) = 0;
     // скачивание файла/папки
-    virtual bool download(zStringUTF8 source, zStringUTF8 dest) = 0;
+    virtual bool download(zString8 source, zString8 dest) = 0;
     // удаление файла
     virtual bool remove(czs& path) = 0;
     // переименование файла/папки
@@ -39,7 +39,7 @@ public:
     // копирование/перемещение файла
     virtual bool moveOrCopy(czs& srcPath, czs& dstPath, bool move) = 0;
     // публикация
-    virtual zStringUTF8 publish(czs& path, bool remove) = 0;
+    virtual zString8 publish(czs& path, bool remove) = 0;
     // получение списка файлов/папок
     virtual zArray<FileInfo> getFiles(czs& path) = 0;
     // вернуть код ответа от сервера
@@ -47,22 +47,22 @@ public:
     // сохранить заголовки в файл
     void saveHeaders(czs& path, bool out = true) const { zFile(path, false, false).writeString(req.getHeaders(out), true); }
     // вернуть логин
-    zStringUTF8 getLogin() const { return login; }
+    zString8 getLogin() const { return login; }
     // вернуть пароль
-    zStringUTF8 getPassword() const { return password; }
+    zString8 getPassword() const { return password; }
     // вернуть почту
-    zStringUTF8 getEmail() const { return email; }
+    zString8 getEmail() const { return email; }
 protected:
     // запрос
     zHttpRequest req{true};
     // авторизатор
     //zOAuth* oauth{nullptr};
     // логин/пароль/почта
-    zStringUTF8 login, password, email;
+    zString8 login, password, email;
     // токен доступа/токен обновления
-    zStringUTF8 token, rtoken;
+    zString8 token, rtoken;
     // базовый хост
-    zStringUTF8 host;
+    zString8 host;
     // JSON
     zJSON& js;
 };
@@ -80,7 +80,7 @@ public:
     // загрузка файла: srcPath => полный путь к файлу(с именем файла), dstPath => полный путь(имя берется из srcPath)
     virtual bool upload(czs& srcPath, czs& dstPath) override;
     // скачивание файла/папки: source => полный путь на сервере, dest => путь без имени
-    virtual bool download(zStringUTF8 source, zStringUTF8 dest) override;
+    virtual bool download(zString8 source, zString8 dest) override;
     // удаление файла: path => полный путь на сервере
     virtual bool remove(czs& path) override;
     // переименование файла/папки: path => полный путь на сервере, name => новое имя
@@ -89,14 +89,14 @@ public:
     // move => признак переносить/копировать
     virtual bool moveOrCopy(czs& srcPath, czs& dstPath, bool move) override;
     // публикация: path => полный путь на сервере, remove => признак создавать ссылку/отозвать ее
-    virtual zStringUTF8 publish(czs& path, bool remove) override;
+    virtual zString8 publish(czs& path, bool remove) override;
     // получение списка файлов/папок: path => полный путь к папке на сервере из которой берутся файлы
     virtual zArray<FileInfo> getFiles(czs& path) override;
 protected:
     // добавление файла/папки
     bool add(czs& path, czs& hash, int size);
     // получение линка
-    zStringUTF8 getUrl(cstr type);
+    zString8 getUrl(cstr type);
 };
 
 class zCloudYandex : public zCloud {
@@ -110,7 +110,7 @@ public:
     // загрузка файла
     virtual bool upload(czs& dstPath, czs& srcPath) override;
     // скачивание файла/папки
-    virtual bool download(zStringUTF8 source, zStringUTF8 dest) override;
+    virtual bool download(zString8 source, zString8 dest) override;
     // удаление файла
     virtual bool remove(czs& path) override;
     // переименование файла/папки
@@ -118,7 +118,7 @@ public:
     // копирование/перемещение файла
     virtual bool moveOrCopy(czs& srcPath, czs& dstPath, bool move) override;
     // публикация
-    virtual zStringUTF8 publish(czs& path, bool remove) override;
+    virtual zString8 publish(czs& path, bool remove) override;
     // получение списка файлов/папок
     virtual zArray<FileInfo> getFiles(czs& path) override;
 };
@@ -134,7 +134,7 @@ public:
     // загрузка файла
     virtual bool upload(czs& dstPath, czs& srcPath) override;
     // скачивание файла/папки
-    virtual bool download(zStringUTF8 source, zStringUTF8 dest) override;
+    virtual bool download(zString8 source, zString8 dest) override;
     // удаление файла
     virtual bool remove(czs& path) override;
     // переименование файла/папки
@@ -142,7 +142,7 @@ public:
     // копирование/перемещение файла
     virtual bool moveOrCopy(czs& srcPath, czs& dstPath, bool move) override;
     // публикация
-    virtual zStringUTF8 publish(czs& path, bool remove) override;
+    virtual zString8 publish(czs& path, bool remove) override;
     // получение списка файлов/папок
     virtual zArray<FileInfo> getFiles(czs& path) override;
 };

@@ -19,11 +19,11 @@ public:
         // вернуть булево
         bool boolean() const { return val == "true"; }
         // вернуть строку
-        zStringUTF8 string() const { return val; }
+        zString8 string() const { return val; }
         // ключь
-        zStringUTF8 key{""};
+        zString8 key{""};
         // значение
-        zStringUTF8 val{""};
+        zString8 val{""};
         // тип
         JType tp{_str};
         // массив дочерних
@@ -39,7 +39,7 @@ public:
     // очистка
     void clear() { SAFE_DELETE(root); }
     // сформировать строку
-    zStringUTF8 save();
+    zString8 save();
     // вернуть корень
     const zNode* getRoot() const { return root; }
     // вернуть узел по индексу

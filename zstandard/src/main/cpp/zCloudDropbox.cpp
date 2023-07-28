@@ -36,7 +36,7 @@ bool zCloudDropbox::upload(czs& srcPath, czs& dstPath) {
 	return false;
 }
 
-bool zCloudDropbox::download(zStringUTF8 source, zStringUTF8 dest) {
+bool zCloudDropbox::download(zString8 source, zString8 dest) {
 	req.setEmbeddedParams(zHttpRequest::HTTP_CONTENT_TYPE, "text/plain");
 	js.clear(); js.addNode("path", source);
 	req.setCustomHeader("Dropbox-API-Arg", js.save());
@@ -61,11 +61,11 @@ bool zCloudDropbox::rename(czs& path, czs& name) {
 bool zCloudDropbox::moveOrCopy(czs& srcPath, czs& dstPath, bool move) {
 	req.setEmbeddedParams(zHttpRequest::HTTP_CONTENT_TYPE, "application/json");
 	js.clear(); js.addNode("from_path", srcPath); js.addNode("to_path", dstPath);
-	auto url(z_fmtUTF8("%s%s", host.str(), move ? "move_v2" : "copy_v2"));
+	auto url(z_fmt8("%s%s", host.str(), move ? "move_v2" : "copy_v2"));
 	return req.request(zHttpRequest::HTTP_POST, url , {js.save()}) == zHttpRequest::HTTP_OK;
 }
 
-zStringUTF8 zCloudDropbox::publish(czs&, bool) {
+zString8 zCloudDropbox::publish(czs&, bool) {
 	return "";
 }
 

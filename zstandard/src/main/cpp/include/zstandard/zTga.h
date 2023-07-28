@@ -9,7 +9,7 @@ public:
     zTga(u8* _ptr, u32 _size);
     virtual ~zTga() { SAFE_DELETE(ptr); }
     // сохранить
-    bool save(const zStringUTF8& path);
+    bool save(const zString8& path);
     // вернуть ширину
     u32 getWidth() const { return width; }
     // вернуть высоту

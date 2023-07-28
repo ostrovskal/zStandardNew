@@ -8,7 +8,7 @@ static char* brakket((char*)"()");
 int zJSON::jnext() {
     int ch(0), ll(0);
     if(jcur < jend) {
-        ch = z_charUTF8(jcur, &ll); jcur += ll;
+        ch = z_char8(jcur, &ll); jcur += ll;
 		if(ch == '\n') line++;
     }
     return ch;
@@ -32,7 +32,7 @@ bool zJSON::jliteral() {
 			if(ch == '\\') z_escape(&tmp, &jcur);
 			else {
 				if(ch == '\"') break;
-                auto sz(z_charLengthUTF8((cstr)&ch));
+                auto sz(z_charLength8((cstr)&ch));
                 memcpy(tmp, &ch, sz); tmp += sz;
 			}
 		}
@@ -51,7 +51,7 @@ bool zJSON::jliteral() {
 }
 
 bool zJSON::parse(zJSON::zNode* p, zJSON::JType jt, int lev) {
-	zStringUTF8 key, val; bool colon(jt == _array || p == nullptr);
+	zString8 key, val; bool colon(jt == _array || p == nullptr);
 	while(true) {
 		z_skip_spc(&jcur, line);
 		auto ch(jnext());
@@ -101,7 +101,7 @@ const zJSON::zNode* zJSON::getNode(cstr name, const zNode* node) const {
 const zJSON::zNode* zJSON::getPath(cstr path, const zNode* node) const {
 	static char buffer[256];
 	auto n(node ? node : root);
-	auto epath(path + z_sizeUTF8(path));
+	auto epath(path + z_size8(path));
 	while(path < epath) {
 		auto ch(*path++);
 		auto f(strchr(path, '/'));
@@ -120,7 +120,7 @@ zJSON::zNode* zJSON::addNode(cstr key, cstr val, JType jt, zNode* node) {
 	return new zNode(n, key, val, jt);
 }
 
-static zStringUTF8 jsave(zJSON::zNode* n, zStringUTF8& s, bool _cont) {
+static zString8 jsave(zJSON::zNode* n, zString8& s, bool _cont) {
 	if(n->key.isNotEmpty()) s += "\"" + n->key + "\": ";
 	switch(n->tp) {
 		case zJSON::_digit:
@@ -137,7 +137,7 @@ static zStringUTF8 jsave(zJSON::zNode* n, zStringUTF8& s, bool _cont) {
 	return s;
 }
 
-zStringUTF8 zJSON::save() {
-	zStringUTF8 s;
+zString8 zJSON::save() {
+	zString8 s;
 	return jsave(root, s, false);
 }

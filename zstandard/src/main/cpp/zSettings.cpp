@@ -8,42 +8,49 @@ zSettings::zSettings(cstr root, cstr* opts) {
     pathFiles = pathRoot + "files/";
     pathCache = pathRoot + "cache/";
     // формируем массив опций со значениями по умолчанию
-    int offs(0), plus(1); ZOPTION::TOPTION t(ZOPTION::TOPTION::_unk);
-    zStringUTF8 o;
-    while((o = *opts++).isNotEmpty()) {
-        auto name(o.substrBefore("="));
-        auto isname(name.isNotEmpty());
-        if(!isname) {
-            // поиск значений
-            auto cat(o.substrAfterLast("[").substrBeforeLast("]").lower());
-            if(cat == "bytes")          t = ZOPTION::TOPTION::_byt, plus = 1;
-            else if(cat == "boolean")   t = ZOPTION::TOPTION::_bol, plus = 1;
-            else if(cat == "hex")       t = ZOPTION::TOPTION::_hex, plus = 4;
-            else if(cat == "float")     t = ZOPTION::TOPTION::_flt, plus = 4;
-            else if(cat == "integer")   t = ZOPTION::TOPTION::_int, plus = 4;
-            else if(cat == "mru")       t = ZOPTION::TOPTION::_mru, plus = 0;
-            else if(cat == "path")      t = ZOPTION::TOPTION::_pth, plus = 0;
-            name = o;
+    if(opts) {
+        int offs(0), plus(1); ZOPTION::TOPTION t(ZOPTION::TOPTION::_unk);
+        zString8 o;
+        while((o = *opts++).isNotEmpty()) {
+            auto name(o.substrBefore("="));
+            auto isname(name.isNotEmpty());
+            if(!isname) {
+                // поиск значений
+                auto cat(o.substrAfterLast("[").substrBeforeLast("]").lower());
+                if(cat == "bytes")          t = ZOPTION::TOPTION::_byt, plus = 1;
+                else if(cat == "boolean")   t = ZOPTION::TOPTION::_bol, plus = 1;
+                else if(cat == "hex")       t = ZOPTION::TOPTION::_hex, plus = 4;
+                else if(cat == "float")     t = ZOPTION::TOPTION::_flt, plus = 4;
+                else if(cat == "integer")   t = ZOPTION::TOPTION::_int, plus = 4;
+                else if(cat == "mru")       t = ZOPTION::TOPTION::_mru, plus = 1, offs = 0;
+                else if(cat == "path")      t = ZOPTION::TOPTION::_pth, plus = 1, offs = 0;
+                name = o;
+            }
+            defs += ZOPTION(name, o.substrAfter("="), t, offs);
+            offs += isname * plus;
         }
-        defs += ZOPTION(name, o.substrAfter("="), t, offs);
-        offs += isname * plus;
     }
 }
 
 void zSettings::init(u8* ptr, cstr name) {
-    zFile fr; auto opts(defs);
-    if(fr.open(pathCache + name, true, false)) {
-        zStringUTF8 str;
-        while((str = fr.readString()).isNotEmpty()) {
-            auto opt(str.substrBefore("="));
-            if(opt.isEmpty()) continue;
-            str.trim();
-            auto index(opts.indexOf<cstr>(opt));
-            if(index != -1) opts[index].value = str.substrAfter("=");
+    if(ptr && name) {
+        zFile fr;
+        auto opts(defs);
+        if(fr.open(pathCache + name, true, false)) {
+            zString8 str;
+            while((str = fr.readString()).isNotEmpty()) {
+                auto opt(str.substrBefore("="));
+                if(opt.isEmpty()) continue;
+                str.trim();
+                auto index(opts.indexOf<cstr>(opt));
+                if(index != -1) opts[index].value = str.substrAfter("=");
+            }
+            fr.close();
         }
-        fr.close();
+        for(auto &o: opts) {
+            if(!o.name.startsWith("[")) setOption(ptr, o);
+        }
     }
-    for(auto& o : opts) setOption(ptr, o);
 }
 
 void zSettings::setOption(u8* ptr, const ZOPTION& opt) {
@@ -73,7 +80,7 @@ void zSettings::setOption(u8* ptr, const ZOPTION& opt) {
     }
 }
 	
-zStringUTF8 zSettings::getOption(const u8* ptr, int idx) {
+zString8 zSettings::getOption(const u8* ptr, int idx) {
     u32 n; int radix(RADIX_DEC); cstr ret;
     auto opt(defs[idx]); auto o(opt.offs);
     switch(opt.type) {
@@ -86,31 +93,29 @@ zStringUTF8 zSettings::getOption(const u8* ptr, int idx) {
             radix = RADIX_HEX;
         case ZOPTION::TOPTION::_int:
             n = *(u32*)(ptr + o);
-            ret = z_ntos(&n, radix, true);
+            ret = z_ntos(&n, radix, opt.type == ZOPTION::TOPTION::_int);
             break;
         case ZOPTION::TOPTION::_bol:
             radix = RADIX_BOL;
         case ZOPTION::TOPTION::_byt:
             n = *(u8*)(ptr + o);
-            ret = z_ntos(&n, radix, true);
+            ret = z_ntos(&n, radix, false);
             break;
         case ZOPTION::TOPTION::_mru:
-            ret = mrus[idx - o];
+            ret = mrus[o];
             break;
         case ZOPTION::TOPTION::_pth:
-            ret = paths[idx - o].substrAfter(pathRoot);
+            ret = paths[o].substrAfter(pathRoot);
             break;
         case ZOPTION::TOPTION::_unk:
-        default:
-            ret = "";
-            break;
+        default: ret = ""; break;
     }
     return { ret };
 }
 
 void zSettings::save(u8* ptr, cstr name) {
     zFile file;
-    if(file.open(pathCache + name, false, false)) {
+    if(ptr && file.open(pathCache + name, false, false)) {
         for(int i = 0 ; i < defs.size(); i++) {
             auto opt(&defs[i]);
             auto cat(opt->name.startsWith("["));
@@ -131,20 +136,20 @@ cstr zSettings::mruOpen(int index, cstr pth, bool error) {
         mrus[9] = "Empty";
         return "";
     }
-    zStringUTF8 title(z_strlen(pth) > 0 ? pth : mrus[index].str());
+    zString8 title(z_strlen(pth) > 0 ? pth : mrus[index].str());
     for(pos = 0; pos < 9; pos++)
         if(mrus[pos] == title) break;
     for(; pos > 0; pos--) mrus[pos] = mrus[pos - 1];
     return mrus[0] = title;
 }
 
-zStringUTF8 zSettings::mruDecorate(int index) const {
-    zStringUTF8 mru(mrus[index]);
+zString8 zSettings::mruDecorate(int index) const {
+    zString8 mru(mrus[index]);
     mru = mru.substrAfterLast("\\", mru);
     return mru.substrAfterLast("/", mru);
 }
 
-zStringUTF8 zSettings::makePath(cstr pth, int type) const {
+zString8 zSettings::makePath(cstr pth, int type) const {
     switch(type) {
         case FOLDER_CACHE:
             return pathCache + pth;

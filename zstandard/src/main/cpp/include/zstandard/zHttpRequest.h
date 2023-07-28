@@ -26,7 +26,7 @@ public:
         union { u8* ptr{nullptr}; char* str; };
     };
     struct REQUEST_DATA {
-        zStringUTF8 linkParam;
+        zString8 linkParam;
         int fd{0}, size{0};
     };
     // конструктор
@@ -54,11 +54,11 @@ public:
     // сформировать json ответ и вернуть код операции
     int jsonResponse() { return (resp.ptr && js.init(resp.ptr, resp.size) ? getStatus() : HTTP_INTERNAL_ERROR); }
     // вернуть редирект ссылку
-    zStringUTF8 getRedirect() const;
+    zString8 getRedirect() const;
     // вернуть заголовки
-    zStringUTF8 getHeaders(bool out) const;
+    zString8 getHeaders(bool out) const;
     // вернуть список куки
-    zStringUTF8 getCookieList() const;
+    zString8 getCookieList() const;
     // вернуть буфер ответа
     const DynBuffer& response() const { return resp; }
     // вернуть json

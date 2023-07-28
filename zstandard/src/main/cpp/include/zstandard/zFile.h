@@ -38,9 +38,9 @@ public:
     virtual void* readn(i32* psize = nullptr, i32 size = 0, i32 pos = -1, i32 mode = 0) const;
     // прочитать строку
     virtual zString readString(i32 pos = -1, i32 mode = 0) const;
-    virtual zStringUTF8 readStringUTF8(int pos = -1, int mode = 0) const;
+    virtual zString8 readString8(int pos = -1, int mode = 0) const;
     // вернуть массив строк из файла
-    zArray<zStringUTF8> strings() const;
+    zArray<zString8> strings() const;
     // записать буфер
     virtual bool write(void* ptr, int size, cstr name = nullptr) const;
     // записать строку
@@ -70,6 +70,6 @@ public:
 protected:
     int		hf{0};
     HZIP* 	hz{nullptr};
-    zStringUTF8 path{};
+    zString8 path{};
 };
 

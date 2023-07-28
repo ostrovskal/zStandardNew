@@ -13,8 +13,8 @@ static cstr msg_err[] = {
 int zXml::next() {
 	int ch(0);
 	if(xml < end) {
-		ch = z_charUTF8(xml);
-		xml += z_charLengthUTF8(xml);
+		ch = z_char8(xml);
+		xml += z_charLength8(xml);
 		if(ch == 0x0D) line++;
 	} else err = ERROR_EOF;
 	return ch;
@@ -33,7 +33,7 @@ zXml::zXml(cstr _path) {
 }
 
 bool zXml::open(cstr _path, u8* ptr, i32 size) {
-	path = _path; zStringUTF8 stkXml(ptr, z_sizeCountUTF8((cstr)ptr, (cstr)ptr + size));
+	path = _path; zString8 stkXml(ptr, z_sizeCount8((cstr)ptr, (cstr)ptr + size));
 	stkXml.trim(); xml = stkXml.buffer(); end = xml + stkXml.size();
 	auto ret(decode());
 	if(!ret) {
@@ -53,39 +53,39 @@ static bool is_delimiter(int c) {
 	return (c > 'Z' && c < 'a');
 }
 
-zStringUTF8 zXml::getValue(char delim) {
-	zStringUTF8 val;
-	z_skip_spc(&xml, line); auto ch(z_charUTF8(xml));
+zString8 zXml::getValue(char delim) {
+	zString8 val;
+	z_skip_spc(&xml, line); auto ch(z_char8(xml));
 	if(delim == '\"' && ch != delim) { err = ERROR_ATTR_VALUE; return ""; }
 	xml += (ch == '\"'); err = ERROR_OK; auto _s(xml); int count(0);
 	while(xml < end) {
 		if(delim == '<') {
 			if((xml + 9) < end && strncmp(xml, "<![CDATA[", 9) == 0) {
-				zStringUTF8 v(_s, count), cd(cdata());
+				zString8 v(_s, count), cd(cdata());
 				val += v.replaceAmp(true) + cd;
 				_s = xml; count = 0;
 				continue;
 			}
 		}
-		if(z_charUTF8(xml) == delim) break;
+		if(z_char8(xml) == delim) break;
 		next(); count++;
 	}
 	if(err == ERROR_OK) {
-		zStringUTF8 v(_s, count);
+		zString8 v(_s, count);
 		xml += (delim == '\"');
 		return val + v.replaceAmp(true);
 	}
 	return "";
 }
 
-zStringUTF8 zXml::getName() {
+zString8 zXml::getName() {
 	z_skip_spc(&xml, line);
 	err = ERROR_OK; auto _s(xml); int count(0);
-	while(xml < end && !is_delimiter(z_charUTF8(xml))) next(), count++;
-	return (err == ERROR_OK ? zStringUTF8(_s, count) : zStringUTF8(""));
+	while(xml < end && !is_delimiter(z_char8(xml))) next(), count++;
+	return (err == ERROR_OK ? zString8(_s, count) : zString8(""));
 }
 
-zStringUTF8 zXml::cdata() {
+zString8 zXml::cdata() {
 	xml += 9; auto cdata(xml); int count(0);
 	while((xml + 2) < end) {
 		count++;
@@ -122,12 +122,12 @@ bool zXml::parser(zNode* p) {
 		auto ch(next());
 		if(ch == '<') {
 			// comment?
-			auto isComment(z_charUTF8(xml) == '!' && xml[1] == '-' && xml[2] == '-');
+			auto isComment(z_char8(xml) == '!' && xml[1] == '-' && xml[2] == '-');
 			if(isComment) { if(!skipComment()) return false; continue; }
 			// head?
-			auto isCapt(z_charUTF8(xml) == '?' && root == nullptr); xml += isCapt;
+			auto isCapt(z_char8(xml) == '?' && root == nullptr); xml += isCapt;
 			// может это конец тега?
-			isEndTag = (z_charUTF8(xml) == '/'); xml += isEndTag;
+			isEndTag = (z_char8(xml) == '/'); xml += isEndTag;
 			auto tag(getName());
 			if(tag.isEmpty() || tag[0] <= '9') {
 				err = ERROR_INVALID_TAG;
@@ -161,7 +161,7 @@ bool zXml::parser(zNode* p) {
 						return res;
 					}
 					// конец тега >,/>
-					auto isFinish(z_charUTF8(xml) == '/' || (isCapt && z_charUTF8(xml) == '?'));
+					auto isFinish(z_char8(xml) == '/' || (isCapt && z_char8(xml) == '?'));
 					xml += isFinish;
 					if(next() != '>') { err = ERROR_INVALID_TAG; return false; }
 					if(isFinish) break;
@@ -204,10 +204,10 @@ bool zXml::decode() {
 }
 
 void zXml::_save(zNode* n, zFile* f, int tab) {
-	zStringUTF8 tb('\t', tab), t(tb + "<" + n->name);
+	zString8 tb('\t', tab), t(tb + "<" + n->name);
 	// attrs
 	for(auto a : n->attrs) {
-		zStringUTF8 an(a->ns);
+		zString8 an(a->ns);
 		if(an.isNotEmpty()) an += ":";
 		an += a->name;
 		t += " " + an + "=\"" + a->value.replaceAmp(false) + "\"";
@@ -218,7 +218,7 @@ void zXml::_save(zNode* n, zFile* f, int tab) {
 	f->writeString(t, n->value.isEmpty());
 	for(auto _n : n->children) _save(_n, f, tab + 1);
 	if(isClose) {
-		t = (n->value.isEmpty() ? tb : zStringUTF8("")) + "</" + n->name + ">";
+		t = (n->value.isEmpty() ? tb : zString8("")) + "</" + n->name + ">";
 		f->writeString(t, true);
 	}
 }

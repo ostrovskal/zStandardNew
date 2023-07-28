@@ -21,14 +21,14 @@ bool zCloudYandex::auth(cstr id, cstr secret, cstr _token) {
 }
 
 bool zCloudYandex::addFolder(czs& path) {
-	auto url(host.substrBeforeLast("/") + "?path=" + z_urlEncodeUTF8(path));
+	auto url(host.substrBeforeLast("/") + "?path=" + z_urlEncode8(path));
 	return req.request(zHttpRequest::HTTP_CUSTOM, url, { "PUT" }) == zHttpRequest::HTTP_CREATED;
 }
 
 bool zCloudYandex::upload(czs& srcPath, czs& dstPath) {
 	zFile f(srcPath, true);
 	if(f.getFd() > 0) {
-		auto url(host + "upload?overwrite=true&path=" + z_urlEncodeUTF8(dstPath + srcPath.substrAfterLast("/", srcPath)));
+		auto url(host + "upload?overwrite=true&path=" + z_urlEncode8(dstPath + srcPath.substrAfterLast("/", srcPath)));
 		if(req.request(zHttpRequest::HTTP_GET, url, {}, true) == zHttpRequest::HTTP_OK) {
 			url = req.json().getNode("href")->string();
 			return req.request(zHttpRequest::HTTP_PUT, url, { "", f.getFd(), f.length() }) == zHttpRequest::HTTP_CREATED;
@@ -37,8 +37,8 @@ bool zCloudYandex::upload(czs& srcPath, czs& dstPath) {
 	return false;
 }
 
-bool zCloudYandex::download(zStringUTF8 source, zStringUTF8 dest) {
-	if(req.request(zHttpRequest::HTTP_GET, host + "download?path=" + z_urlEncodeUTF8(source), {}, true) == zHttpRequest::HTTP_OK) {
+bool zCloudYandex::download(zString8 source, zString8 dest) {
+	if(req.request(zHttpRequest::HTTP_GET, host + "download?path=" + z_urlEncode8(source), {}, true) == zHttpRequest::HTTP_OK) {
 		if(req.request(zHttpRequest::HTTP_GET, req.json().getNode("href")->string(), {}) == zHttpRequest::HTTP_OK) {
 			return req.saveResponse(dest.slash() + source.substrAfterLast("/", source));
 		}
@@ -47,24 +47,24 @@ bool zCloudYandex::download(zStringUTF8 source, zStringUTF8 dest) {
 }
 
 bool zCloudYandex::remove(czs& path) {
-	auto url(host.substrBeforeLast("/") + "?permanently=true&path=" + z_urlEncodeUTF8(path));
+	auto url(host.substrBeforeLast("/") + "?permanently=true&path=" + z_urlEncode8(path));
 	return req.request(zHttpRequest::HTTP_CUSTOM, url, { "DELETE" }) == zHttpRequest::HTTP_SUCCESEED;
 }
 
 bool zCloudYandex::rename(czs& path, czs& name) {
-	zStringUTF8 dest(path.substrBeforeLast("/", path) + "/" + name);
-	auto urn(z_fmtUTF8("move?from=%s&path=%s&overwrite=true", z_urlEncodeUTF8(path).str(), z_urlEncodeUTF8(dest).str()));
+	zString8 dest(path.substrBeforeLast("/", path) + "/" + name);
+	auto urn(z_fmt8("move?from=%s&path=%s&overwrite=true", z_urlEncode8(path).str(), z_urlEncode8(dest).str()));
 	return req.request(zHttpRequest::HTTP_POST, host + urn, {}) == zHttpRequest::HTTP_CREATED;
 }
 
 bool zCloudYandex::moveOrCopy(czs& srcPath, czs& dstPath, bool move) {
-	auto urn(z_fmtUTF8("%s?from=%s&path=%s&overwrite=true", move ? "move" : "copy", z_urlEncodeUTF8(srcPath).str(), z_urlEncodeUTF8(dstPath).str()));
+	auto urn(z_fmt8("%s?from=%s&path=%s&overwrite=true", move ? "move" : "copy", z_urlEncode8(srcPath).str(), z_urlEncode8(dstPath).str()));
 	return req.request(zHttpRequest::HTTP_POST, host + urn, {}) == zHttpRequest::HTTP_CREATED;
 }
 
-zStringUTF8 zCloudYandex::publish(czs& path, bool remove) {
-	zStringUTF8 link;
-	auto urn(z_fmtUTF8("%s?path=%s", remove ? "unpublish" : "publish", z_urlEncodeUTF8(path).str()));
+zString8 zCloudYandex::publish(czs& path, bool remove) {
+	zString8 link;
+	auto urn(z_fmt8("%s?path=%s", remove ? "unpublish" : "publish", z_urlEncode8(path).str()));
 	if(req.request(zHttpRequest::HTTP_CUSTOM, host + urn, { "PUT" }, true) == zHttpRequest::HTTP_OK)
 		link = js["href"]->string();
 	return link;
@@ -72,9 +72,9 @@ zStringUTF8 zCloudYandex::publish(czs& path, bool remove) {
 
 zArray<zCloud::FileInfo> zCloudYandex::getFiles(czs& _path) {
 	zArray<zCloud::FileInfo> ret; int offset(0);
-	auto url(host.substrBeforeLast("/") + "?path=" + z_urlEncodeUTF8(_path) + 
+	auto url(host.substrBeforeLast("/") + "?path=" + z_urlEncode8(_path) +
 			 "&limit=40&sort=name&fields=_embedded.items.path,_embedded.items.type,_embedded.items.size");
-	while(req.request(zHttpRequest::HTTP_GET, z_fmtUTF8("%s&offset=%i", url.str(), offset), {}, true) == zHttpRequest::HTTP_OK) {
+	while(req.request(zHttpRequest::HTTP_GET, z_fmt8("%s&offset=%i", url.str(), offset), {}, true) == zHttpRequest::HTTP_OK) {
 		auto lst(js.getPath("n_embedded/nitems"));
 		auto count(lst->count());
 		for(int i = 0; i < count; i++) {
