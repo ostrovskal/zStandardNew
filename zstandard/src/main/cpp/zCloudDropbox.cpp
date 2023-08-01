@@ -69,8 +69,8 @@ zString8 zCloudDropbox::publish(czs&, bool) {
 	return "";
 }
 
-zArray<zCloud::FileInfo> zCloudDropbox::getFiles(czs& _path) {
-	zArray<zCloud::FileInfo> ret;
+zArray<zFile::zFileInfo> zCloudDropbox::getFiles(czs& _path) {
+	zArray<zFile::zFileInfo> ret;
 	req.setEmbeddedParams(zHttpRequest::HTTP_CONTENT_TYPE, "application/json");
 	js.clear(); js.addNode("path", _path); 
 	js.addNode("include_mounted_folders", "false", zJSON::_bool);
@@ -80,10 +80,11 @@ zArray<zCloud::FileInfo> zCloudDropbox::getFiles(czs& _path) {
 		auto count(lst->count());
 		for(int i = 0; i < count; i++) {
 			auto o(js.getNode(i, lst));
-			auto size(js.getNode("size", o)->integer());
-			auto type(js.getNode(".tag", o)->string());
-			auto path(js.getNode("path_display", o)->string().substrAfterLast("/"));
-			ret += FileInfo(path, path.substrAfterLast("."), size, type == "folder");
+			fi.usize = js.getNode("size", o)->integer();
+			fi.attr  = js.getNode(".tag", o)->string() == "folder" ? S_IFDIR : S_IFREG;
+			fi.path  = js.getNode("path_display", o)->string().substrAfterLast("/");
+			fi.zip   = fi.path.endsWith(".zip"); fi.index = 0;
+			ret      += fi;
 		}
 	}
 	return ret;

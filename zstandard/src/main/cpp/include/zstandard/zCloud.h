@@ -8,16 +8,6 @@
 
 class zCloud {
 public:
-    struct FileInfo {
-        FileInfo() { }
-        FileInfo(czs& p, czs& e, int s, bool f) : size(s), ext(e), folder(f), path(p) { }
-        // размер
-        int size{0};
-        // признак папки
-        bool folder{false};
-        // полный путь/расширение
-        zString8 path, ext;
-    };
     // конструктор
     zCloud(cstr _host, cstr _login, cstr _password) : login(_login), password(_password), host(_host), js(req.json()) { }
     // деструктор
@@ -41,7 +31,7 @@ public:
     // публикация
     virtual zString8 publish(czs& path, bool remove) = 0;
     // получение списка файлов/папок
-    virtual zArray<FileInfo> getFiles(czs& path) = 0;
+    virtual zArray<zFile::zFileInfo> getFiles(czs& path) = 0;
     // вернуть код ответа от сервера
     int getStatus() const { return req.getStatus(); }
     // сохранить заголовки в файл
@@ -65,6 +55,9 @@ protected:
     zString8 host;
     // JSON
     zJSON& js;
+    // структура информации о файле
+    static zFile::zFileInfo fi;
+
 };
 
 class zCloudMail : public zCloud {
@@ -91,7 +84,7 @@ public:
     // публикация: path => полный путь на сервере, remove => признак создавать ссылку/отозвать ее
     virtual zString8 publish(czs& path, bool remove) override;
     // получение списка файлов/папок: path => полный путь к папке на сервере из которой берутся файлы
-    virtual zArray<FileInfo> getFiles(czs& path) override;
+    virtual zArray<zFile::zFileInfo> getFiles(czs& path) override;
 protected:
     // добавление файла/папки
     bool add(czs& path, czs& hash, int size);
@@ -120,7 +113,7 @@ public:
     // публикация
     virtual zString8 publish(czs& path, bool remove) override;
     // получение списка файлов/папок
-    virtual zArray<FileInfo> getFiles(czs& path) override;
+    virtual zArray<zFile::zFileInfo> getFiles(czs& path) override;
 };
 
 class zCloudDropbox : public zCloud {
@@ -144,6 +137,6 @@ public:
     // публикация
     virtual zString8 publish(czs& path, bool remove) override;
     // получение списка файлов/папок
-    virtual zArray<FileInfo> getFiles(czs& path) override;
+    virtual zArray<zFile::zFileInfo> getFiles(czs& path) override;
 };
 

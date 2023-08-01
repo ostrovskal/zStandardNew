@@ -12,7 +12,7 @@ public:
         // индекс элемента
         int index;
         // имя
-        char name[260];
+        zString8 path;
         // атрибуты
         u32 attr;
         // время
@@ -48,7 +48,7 @@ public:
     // определить количество файлов
     virtual int	countFiles() const;
     // получить информацию
-    bool info(zFileInfo& zfi, int zindex = 0) const;
+    virtual bool info(zFileInfo& zfi, int zindex = 0) const;
     // вернуть признак архива
     bool isZip() const { return hz != nullptr; }
     // установить позицию
@@ -62,11 +62,14 @@ public:
     // вернуть путь
     czs& pth() const { return path; }
     // найти
-    static zArray<zFileInfo> find(cstr path, cstr _msk);
+    static zArray<zFileInfo> find(cstr pth, cstr _msk);
+    // проверка на существование файла/папки
+    static bool isFile(cstr pth) { struct stat sb{}; return (stat(pth, &sb) ? 0 : (sb.st_mode & S_IFREG) != 0); }
+    static bool isFolder(cstr pth) { struct stat sb{}; return (stat(pth, &sb) ? 0 : (sb.st_mode & S_IFDIR) != 0); }
     // переименование/перемещение
     static bool	move(cstr _old, cstr _new) { return rename(_old, _new) == 0; }
     // удаление
-    static bool remove(cstr path) { return unlinkf(path) == 0; }
+    static bool remove(cstr pth) { return unlinkf(pth) == 0; }
 protected:
     int		hf{0};
     HZIP* 	hz{nullptr};

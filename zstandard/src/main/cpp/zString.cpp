@@ -6,19 +6,16 @@
 #include "zstandard/zString.h"
 
 zString::zString(i32 value, u32 offs, bool _hex, u32 radix) {
-    init();
-    *this = z_fmtValue(value, offs, _hex, radix);
+    init(); *this = z_fmtValue(value, offs, _hex, radix);
 }
 
 zString::zString(cstr cws, i32 len) {
-    init();
-    auto t(z_strlen(cws));
+    init(); auto t(z_strlen(cws));
     make(cws, (len < 0 || len >= t) ? t : len);
 }
 
 zString::zString(char ws, i32 rep) {
-    init();
-    auto buf(alloc(rep, false));
+    init(); auto buf(alloc(rep, false));
     memset(buf, ws, rep);
 }
 

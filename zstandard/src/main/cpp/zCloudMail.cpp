@@ -5,6 +5,8 @@
 #include "zstandard/zstandard.h"
 #include "zstandard/zCloud.h"
 
+zFile::zFileInfo zCloud::fi{};
+
 zString8 zCloudMail::getUrl(cstr type) {
     zString8 link;
     req.setEmbeddedParams(zHttpRequest::HTTP_ACCEPT, "application/json");
@@ -94,8 +96,8 @@ bool zCloudMail::moveOrCopy(czs& srcPath, czs& dstPath, bool move) {
     return req.request(zHttpRequest::HTTP_POST, url, { urn }) == zHttpRequest::HTTP_OK;
 }
 
-zArray<zCloudMail::FileInfo> zCloudMail::getFiles(czs& _path) {
-    zArray<FileInfo> ret;
+zArray<zFile::zFileInfo> zCloudMail::getFiles(czs& _path) {
+    zArray<zFile::zFileInfo> ret;
     auto uri(z_fmt8(host + "folder?home=%s", _path.str()));
     req.setEmbeddedParams(zHttpRequest::HTTP_CONTENT_TYPE, "application/x-www-form-urlencoded");
     req.setEmbeddedParams(zHttpRequest::HTTP_ACCEPT, "application/json");
@@ -104,10 +106,11 @@ zArray<zCloudMail::FileInfo> zCloudMail::getFiles(czs& _path) {
         for(int i = 0; i < lst->count(); i++) {
             // count, tree, name, grev, size, kind, rev, type, home
             auto o(js.getNode(i, lst));
-            auto size(js.getNode("size", o)->integer());
-            auto type(js.getNode("type", o)->string());
-            auto path(js.getNode("home", o)->string());
-            ret += FileInfo(path, path.substrAfterLast("."), size, type == "folder");
+            fi.usize = js.getNode("size", o)->integer();
+            fi.attr  = js.getNode("type", o)->string() == "folder" ? S_IFDIR : S_IFREG;
+            fi.path  = js.getNode("home", o)->string();
+            fi.zip   = fi.path.endsWith(".zip"); fi.index = 0;
+            ret      += fi;
         }
     }
     return ret;

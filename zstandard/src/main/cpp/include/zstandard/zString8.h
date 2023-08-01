@@ -69,8 +69,8 @@ public:
     bool isNotEmpty() const { return count() != 0; }
     bool compare(cstr str) const;
     // модификация
-    const zString8& appendNotEmpty(cstr ch) { if(isNotEmpty()) *this += ch; return *this; }
-    const zString8& slash(cstr ch = "/") { if(!endsWith(ch)) *this += ch; return *this; }
+    const zString8& appendNotEmpty(const zString8& str, cstr sep = "|") { if(isNotEmpty()) *this += sep; *this += str; return *this; }
+    const zString8& slash(cstr sep = "/") { if(!endsWith(sep)) *this += sep; return *this; }
     const zString8& lower();
     const zString8& upper();
     const zString8& reverse() const;

@@ -272,7 +272,7 @@ u8* z_rle_decompress(u8* in, int size, int nsize) {
 	return _out;
 }
 
-char* z_fmtValue(i32 value, u32 offs, bool hex, i32 radix, bool _showHex) {
+char* z_fmtValue(i32 value, u32 offs, bool hex, i32 radix) {
     static cstr fmtTypes[] = {
             "3X", "2X", "3X ", "2X ",
             "5(X)", "4(#X)", "3(X)", "2(#X)",
@@ -288,12 +288,12 @@ char* z_fmtValue(i32 value, u32 offs, bool hex, i32 radix, bool _showHex) {
             "0X", "0X"
     };
     static char _buffer[128];
-    char ch, *end(nullptr);
+    char ch, *end(nullptr); auto buffer(_buffer), tmp(buffer);
     if(offs == ZFV_BINARY) radix = RADIX_BIN;
     else if(offs == ZFV_DECIMAL) hex = false;
-    auto buffer(_buffer), tmp(buffer);
-    auto rdx((int)(offs + (hex ? _showHex : 0)));
-    auto res(z_ntos(&value, radix == 0 ? rdx & 1 : radix, true, 0, &end));
+//    auto rdx((int)(offs + (hex ? _showHex : 0)));
+    auto rdx((int)(offs + hex));
+    auto res(z_ntos(&value, radix <= RADIX_HEX ? rdx & 1 : radix, true, 0, &end));
     auto spec(fmtTypes[rdx]); auto lnum((spec[0] - '0') - (end - res));
     bool znak(false);
     while((ch = *++spec)) {

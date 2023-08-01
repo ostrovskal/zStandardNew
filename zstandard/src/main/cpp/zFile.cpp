@@ -166,16 +166,16 @@ bool zFile::info(zFileInfo& zfi, int zindex) const {
         zfi.atime = (time_t)zinfo.mtime; zfi.ctime = (time_t)zinfo.mtime; zfi.mtime = (time_t)zinfo.mtime;
         zfi.csize = zinfo.csize; zfi.usize = zinfo.usize;
         zfi.attr  = zinfo.attr;  zfi.index = zindex;
-        strcpy(zfi.name, zinfo.name);
+        zfi.path = zinfo.name;
     } else if(hf > 0) {
         struct stat st{};
         if(fstat(hf, &st)) return false;
         zfi.atime = st.st_atime; zfi.mtime = st.st_mtime; zfi.ctime = st.st_ctime;
         zfi.csize = st.st_size;  zfi.usize = st.st_size;
         zfi.attr = st.st_mode;   zfi.index = -1;
-        strcpy(zfi.name, path.str());
+        zfi.path = path;
     }
-    zfi.zip = (hz != nullptr);
+    zfi.zip = zfi.path.endsWith(".zip");
     return (hf > 0 || hz != nullptr);
 }
 
@@ -203,8 +203,8 @@ zArray<zFile::zFileInfo> zFile::find(cstr path, cstr _msk) {
         while((ent = readdir(dir))) {
             if((strncmp(ent->d_name, ".", PATH_MAX) == 0) || (strncmp(ent->d_name, "..", PATH_MAX) == 0)) continue;
             // поиск по маске
-            bool res(true); auto _s(fname); auto namlen(z_strlen(ent->d_name));
-            strcpy(fname, ent->d_name);// z_strlwr(fname);
+            bool res(true); auto _s(fname);
+            strcpy(fname, ent->d_name);
             for(int i = 0; i < am.size(); i++) {
                 auto m(am[i]);
                 if(m.isEmpty()) continue;
@@ -214,26 +214,17 @@ zArray<zFile::zFileInfo> zFile::find(cstr path, cstr _msk) {
                 res = false; break;
             }
             if(res) {
-                res = false;
-                auto l1(z_strlen(path));
-                strcpy(info.name, path);
-                strcpy(info.name + l1, ent->d_name);
-                if(ent->d_type & DT_DIR) {
-                    struct stat st{};
-                    if(!stat(info.name, &st)) {
-                        info.atime = st.st_atime; info.mtime = st.st_mtime; info.ctime = st.st_ctime;
-                        info.csize = st.st_size;  info.usize = st.st_size;
-                        info.attr = st.st_mode;   info.index = -1;
-                        auto ch(info.name[l1 + namlen]);
-                        if(ch != '/' && ch != '\\') info.name[l1 + namlen] = '/';
-                        info.name[l1 + namlen + 1] = 0;
-                        res = true;
-                    }
-                } else {
-                    zFile f(info.name, true, false);
-                    res = f.info(info); f.close();
+                info.path = path; info.path += ent->d_name;
+                struct stat st{};
+                if(!stat(info.path, &st)) {
+                    info.atime = st.st_atime; info.mtime = st.st_mtime; info.ctime = st.st_ctime;
+                    info.csize = st.st_size;  info.usize = st.st_size;
+                    info.attr  = st.st_mode;  info.index = -1;
+                    info.zip   = info.path.endsWith(".zip");
+                    if(info.attr & S_IFDIR) info.path.slash();
+                    fl += info;
                 }
-                if(res) fl += info; else *info.name = 0;
+                info.path.empty();
             }
         }
         closedir(dir);

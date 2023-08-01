@@ -70,8 +70,8 @@ zString8 zCloudYandex::publish(czs& path, bool remove) {
 	return link;
 }
 
-zArray<zCloud::FileInfo> zCloudYandex::getFiles(czs& _path) {
-	zArray<zCloud::FileInfo> ret; int offset(0);
+zArray<zFile::zFileInfo> zCloudYandex::getFiles(czs& _path) {
+	zArray<zFile::zFileInfo> ret; int offset(0);
 	auto url(host.substrBeforeLast("/") + "?path=" + z_urlEncode8(_path) +
 			 "&limit=40&sort=name&fields=_embedded.items.path,_embedded.items.type,_embedded.items.size");
 	while(req.request(zHttpRequest::HTTP_GET, z_fmt8("%s&offset=%i", url.str(), offset), {}, true) == zHttpRequest::HTTP_OK) {
@@ -79,10 +79,11 @@ zArray<zCloud::FileInfo> zCloudYandex::getFiles(czs& _path) {
 		auto count(lst->count());
 		for(int i = 0; i < count; i++) {
 			auto o(js.getNode(i, lst));
-			auto size(js.getNode("size", o)->integer());
-			auto type(js.getNode("type", o)->string());
-			auto path(js.getNode("path", o)->string().substrAfterLast("/"));
-			ret += FileInfo(path, path.substrAfterLast("."), size, type == "dir");
+			fi.usize = js.getNode("size", o)->integer();
+			fi.attr  = js.getNode("type", o)->string() == "dir" ? S_IFDIR : S_IFREG;
+			fi.path  = js.getNode("path", o)->string().substrAfterLast("/");
+			fi.zip   = fi.path.endsWith(".zip"); fi.index = 0;
+			ret      += fi;
 		}
 		if(count < 40) break;
 		offset += count;

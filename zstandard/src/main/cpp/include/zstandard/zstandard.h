@@ -335,7 +335,7 @@ u32 z_hash(cstr str, i32 len);
 // ремаппинг
 i32 z_remap(i32 value, i32* place);
 // число в строку с формированием
-char* z_fmtValue(i32 value, u32 type, bool hex, i32 radix = RADIX_DEC, bool _showHex = false);
+char* z_fmtValue(i32 value, u32 type, bool hex = false, i32 radix = RADIX_DEC);
 // число в строку
 char* z_ntos(void* v, i32 r, bool sign, int size = 4, char** end = nullptr);
 // строку в число
@@ -459,6 +459,8 @@ int z_encode8(u32 ch);
 #include "zXml.h"
 #include "zEnum.h"
 
+using zString8Array = zArray<zString8>;
+
 #ifndef WIN32
     #include "zGRef.h"
 #endif
@@ -473,10 +475,7 @@ template<typename T> void z_logBuffer(const zString8& tips, const T& elem, int s
     if(count < size) buf[count++] = elem;
     if(count >= size || show) {
         zString8 tmp(tips);
-        for(int i = 0 ; i < count; i++) {
-            tmp.appendNotEmpty(", ");
-            tmp += z_ntos(&buf[i], hex, !hex, sizeof(T));
-        }
+        for(int i = 0 ; i < count; i++) tmp.appendNotEmpty(z_ntos(&buf[i], hex, !hex, sizeof(T)), ", ");
         DLOG(tmp.str());
         count = 0;
     }

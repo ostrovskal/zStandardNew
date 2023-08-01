@@ -20,11 +20,10 @@ zShader::zShader(zShader* vert, zShader* frag) {
         glGetProgramInfoLog(id, sizeof(logInfo), nullptr, logInfo);
         ILOG("Error compile shader: %s", logInfo);
     } else {
-        glUseProgram(id);
         DLOG("Compile programm shader is ok!");
     }
-    SAFE_DELETE(vert);
-    SAFE_DELETE(frag);
+    delete vert;
+    delete frag;
 }
 
 zShader::zShader(cstr programm, i32 type) {
@@ -43,16 +42,17 @@ zShader::~zShader() {
     id = 0;
 }
 
-GLuint zShader::linkVariables(i32* buf, czs& vars) const {
-    auto arr(vars.split(";")); int pos;
-    for(auto& v : arr) {
-        auto _v(v.str());
+zArray<int> zShader::linkVariables(czs& str) const {
+    auto arr(str.split(";"));
+    zArray<int> vars(arr.size()); int pos;
+    for(int i = 0 ; i < arr.size(); i++) {
+        auto _v(arr[i].str());
         switch(*_v++) {
             case 'u': pos = glGetUniformLocation(id, _v); break;
             case 'a': pos = glGetAttribLocation(id, _v); break;
             default: pos = -1; break;
         }
-        *buf++ = pos;
+        vars[i] = pos;
     }
-    return id;
+    return vars;
 }

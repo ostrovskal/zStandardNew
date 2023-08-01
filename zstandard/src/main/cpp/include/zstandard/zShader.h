@@ -10,7 +10,9 @@ public:
     zShader(zShader* vert, zShader* frag);
     virtual ~zShader();
     // связать переменные
-    GLuint linkVariables(i32* buf, czs& vars) const;
+    zArray<int> linkVariables(czs& str) const;
+    // вернуть идентификатор
+    GLuint getID() const { return id; }
 private:
     // идентификатор
     GLuint id{0};
