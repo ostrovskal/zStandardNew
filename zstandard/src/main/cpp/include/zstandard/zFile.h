@@ -7,6 +7,10 @@
 class zFile {
 public:
     struct zFileInfo {
+        void setPath(zString8 p) {
+            path = p;
+            zip = p.right(4).compare(".zip");
+        }
         // признак архива
         bool zip;
         // индекс элемента
@@ -17,21 +21,21 @@ public:
         u32 attr;
         // время
         time_t atime, ctime, mtime;
-        // размер
+        // размер(compress/uncompress)
         long long csize, usize;
     };
     // конструктор по умолчанию
     zFile() { }
     // конструктор по значению
-    zFile(cstr path, bool read, bool zipped = true, bool append = false) { open(path, read, zipped, append); }
+    zFile(czs& pth, bool read, bool zipped = true, bool append = false) { _open(pth, read, zipped, append); }
     // деструктор
-    ~zFile() { close(); }
+    virtual ~zFile() { close(); }
     // открыть/создать файл
-    virtual bool open(cstr path, bool read, bool zipped = true, bool append = false);
+    virtual bool open(czs& pth, bool read, bool zipped = true, bool append = false);
     // закрыть
     virtual void close();
     // копировать/распаковать в папку
-    bool copy(cstr path, i32 index);
+    bool copy(czs& pth, i32 index);
     // прочитать в буфер
     virtual void* read(i32* psize, void* ptr, i32 size = 0, i32 pos = -1, i32 mode = 0) const;
     // прочитать в автобуфер
@@ -60,9 +64,9 @@ public:
     // вернуть дескриптор
     int getFd() const { return hf; }
     // вернуть путь
-    czs& pth() const { return path; }
+    zString8 pth() const { return path; }
     // найти
-    static zArray<zFileInfo> find(cstr pth, cstr _msk);
+    static zArray<zFileInfo> find(czs& pth, czs& _msk);
     // проверка на существование файла/папки
     static bool isFile(cstr pth) { struct stat sb{}; return (stat(pth, &sb) ? 0 : (sb.st_mode & S_IFREG) != 0); }
     static bool isFolder(cstr pth) { struct stat sb{}; return (stat(pth, &sb) ? 0 : (sb.st_mode & S_IFDIR) != 0); }
@@ -71,6 +75,7 @@ public:
     // удаление
     static bool remove(cstr pth) { return unlinkf(pth) == 0; }
 protected:
+    bool    _open(czs& pth, bool read, bool zipped, bool append) { return open(pth, read, zipped, append); }
     int		hf{0};
     HZIP* 	hz{nullptr};
     zString8 path{};

@@ -32,6 +32,8 @@ public:
     virtual zString8 publish(czs& path, bool remove) = 0;
     // получение списка файлов/папок
     virtual zArray<zFile::zFileInfo> getFiles(czs& path) = 0;
+    // вернуть запрос
+    zHttpRequest& getRequest() { return req; }
     // вернуть код ответа от сервера
     int getStatus() const { return req.getStatus(); }
     // сохранить заголовки в файл

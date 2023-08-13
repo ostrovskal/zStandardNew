@@ -102,14 +102,14 @@ zArray<zFile::zFileInfo> zCloudMail::getFiles(czs& _path) {
     req.setEmbeddedParams(zHttpRequest::HTTP_CONTENT_TYPE, "application/x-www-form-urlencoded");
     req.setEmbeddedParams(zHttpRequest::HTTP_ACCEPT, "application/json");
     if(req.request(zHttpRequest::HTTP_GET, uri, {}, true) == zHttpRequest::HTTP_OK) {
-        auto lst(js.getPath("nbody/nlist"));
+        auto lst(js.getPath("nbody/nlist")); zString8 p;
         for(int i = 0; i < lst->count(); i++) {
             // count, tree, name, grev, size, kind, rev, type, home
             auto o(js.getNode(i, lst));
             fi.usize = js.getNode("size", o)->integer();
             fi.attr  = js.getNode("type", o)->string() == "folder" ? S_IFDIR : S_IFREG;
-            fi.path  = js.getNode("home", o)->string();
-            fi.zip   = fi.path.endsWith(".zip"); fi.index = 0;
+            fi.index = 0;
+            fi.setPath(js.getNode("home", o)->string());
             ret      += fi;
         }
     }

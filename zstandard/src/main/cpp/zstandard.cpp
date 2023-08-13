@@ -160,9 +160,9 @@ char* z_ntos(void* v, i32 r, bool sign, int size, char** end) {
     return buf;
 }
 
-static i32 stoi(cstr* s, u8 order, u8 msk) {
+static i64 stoi(cstr* s, u8 order, u8 msk) {
     u8* str((u8*)*s), *end(str - 1);
-    i32 n(0), nn(1);
+    i64 n(0), nn(1);
     // поиск конца
     u8 ch;
     while((ch = *++end)) {
@@ -191,11 +191,11 @@ void* z_ston_(cstr s, i32 r, char** end) {
     if(*s == '#') { r = RADIX_HEX; s++; }
     else if(*s == '%') { r = RADIX_BIN; s++; }
     auto msk(rdx[r * 2 + 1]);
-    i32 n; double d(0.0);
+    i64 n; double d(0.0);
     switch(r) {
         case RADIX_DEC: case RADIX_HEX: case RADIX_BIN: case RADIX_OCT:
             n = stoi(&s, rdx[r * 2 + 0], msk) * sign;
-            *(i32*)&res = n;
+            *(i64*)&res = n;
             break;
         case RADIX_DBL: case RADIX_FLT:
             n = stoi(&s, 10, 8);
@@ -217,7 +217,7 @@ void* z_ston_(cstr s, i32 r, char** end) {
                     d += valid[ch]; d /= 10.0;
                 }
             }
-            d += n; d *= sign;
+            d += (double)n; d *= sign;
             if(r == RADIX_FLT) *(float*)&res = (float)d; else *(double*)&res = d;
             break;
         case RADIX_BOL:
@@ -522,3 +522,22 @@ bool z_tgaSaveFile(cstr path, u8* ptr, int w, int h, int comp) {
     }
     return false;
 }
+
+zString8 z_kilo(int val) {
+    float f; cstr suffix;
+    if(val > 1024 * 1024 * 1024) {
+        f = (float)val / 1073741824.0f;
+        suffix = "GB";
+    } else if(val > 1024 * 1024) {
+        f = (float)val / 1048576.0f;
+        suffix = "MB";
+    } else if(val > 1024) {
+        f = (float)val / 1024.0f;
+        suffix = "KB";
+    } else {
+        f = (float)val;
+        suffix = "B";
+    }
+    return z_fmt8("%.02f%s", f, suffix);
+}
+

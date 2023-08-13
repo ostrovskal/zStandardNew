@@ -26,7 +26,7 @@ zSettings::zSettings(cstr root, cstr* opts) {
                 else if(cat == "path")      t = ZOPTION::TOPTION::_pth, plus = 1, offs = 0;
                 name = o;
             }
-            defs += ZOPTION(name, o.substrAfter("="), t, offs);
+            defs += ZOPTION(name, o.substrAfter("="), t, isname ? offs : -1);
             offs += isname * plus;
         }
     }
@@ -48,7 +48,7 @@ void zSettings::init(u8* ptr, cstr name) {
             fr.close();
         }
         for(auto &o: opts) {
-            if(!o.name.startsWith("[")) setOption(ptr, o);
+            if(o.offs >= 0) setOption(ptr, o);
         }
     }
 }
@@ -118,7 +118,7 @@ void zSettings::save(u8* ptr, cstr name) {
     if(ptr && file.open(pathCache + name, false, false)) {
         for(int i = 0 ; i < defs.size(); i++) {
             auto opt(&defs[i]);
-            auto cat(opt->name.startsWith("["));
+            auto cat(opt->offs == -1);
             file.writeString(opt->name, cat);
             if(!cat) {
                 file.writeString("=", false);
@@ -129,24 +129,24 @@ void zSettings::save(u8* ptr, cstr name) {
     }
 }
 
-cstr zSettings::mruOpen(int index, cstr pth, bool error) {
+zString8 zSettings::getDefault(cstr name) const {
+    auto idx(defs.indexOf(name));
+    return (idx >= 0 && idx < defs.size() ? defs[idx].value : "");
+}
+
+zString8 zSettings::mruOpen(int index, czs& pth, bool error) {
     auto pos(index);
     if(error) {
         for(; pos < 9; pos++) mrus[pos] = mrus[pos + 1];
         mrus[9] = "Empty";
         return "";
     }
-    zString8 title(z_strlen(pth) > 0 ? pth : mrus[index].str());
+    // либо переставить на нулевую позицию, либо поставить новую
+    auto title(pth.isNotEmpty() ? pth : mrus[index]);
     for(pos = 0; pos < 9; pos++)
         if(mrus[pos] == title) break;
     for(; pos > 0; pos--) mrus[pos] = mrus[pos - 1];
     return mrus[0] = title;
-}
-
-zString8 zSettings::mruDecorate(int index) const {
-    zString8 mru(mrus[index]);
-    mru = mru.substrAfterLast("\\", mru);
-    return mru.substrAfterLast("/", mru);
 }
 
 zString8 zSettings::makePath(cstr pth, int type) const {

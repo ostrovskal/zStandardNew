@@ -13,13 +13,11 @@
 
 static unz_file_info zinfo;
 
-bool zFile::open(cstr pth, bool read, bool zipped, bool append) {
+bool zFile::open(czs& pth, bool read, bool zipped, bool append) {
     close();
     if(pth) {
-        if(strstr(pth, ".zip")) {
-            if(zipped) {
-                hz = (read ? unzOpen(pth) : zipOpen(pth, APPEND_STATUS_CREATE));
-            }
+        if(zipped && pth.right(4).compare(".zip")) {
+            hz = (read ? unzOpen(pth) : zipOpen(pth, APPEND_STATUS_CREATE));
         }
         if(!hz) {
 #ifdef WIN32
@@ -39,7 +37,7 @@ bool zFile::open(cstr pth, bool read, bool zipped, bool append) {
     return ret;
 }
 
-bool zFile::copy(cstr pth, int index) {
+bool zFile::copy(czs& pth, int index) {
     bool ret(false);
     if(hz) {
         ret = (unzUnzipToFile(hz->unz, index, pth) == ZIP_OK);
@@ -161,21 +159,22 @@ int zFile::countFiles() const {
 }
 
 bool zFile::info(zFileInfo& zfi, int zindex) const {
+    zString8 p;
     if(hz) {
         if(unzLocateFile(hz->unz, &zinfo, zindex, nullptr, 0)) return false;
         zfi.atime = (time_t)zinfo.mtime; zfi.ctime = (time_t)zinfo.mtime; zfi.mtime = (time_t)zinfo.mtime;
         zfi.csize = zinfo.csize; zfi.usize = zinfo.usize;
         zfi.attr  = zinfo.attr;  zfi.index = zindex;
-        zfi.path = zinfo.name;
+        p = zinfo.name;
     } else if(hf > 0) {
         struct stat st{};
         if(fstat(hf, &st)) return false;
         zfi.atime = st.st_atime; zfi.mtime = st.st_mtime; zfi.ctime = st.st_ctime;
         zfi.csize = st.st_size;  zfi.usize = st.st_size;
         zfi.attr = st.st_mode;   zfi.index = -1;
-        zfi.path = path;
+        p = path;
     }
-    zfi.zip = zfi.path.endsWith(".zip");
+    zfi.setPath(p);
     return (hf > 0 || hz != nullptr);
 }
 
@@ -194,12 +193,12 @@ int zFile::length() const {
     return (hz ? (int)zinfo.usize : 0);
 }
 
-zArray<zFile::zFileInfo> zFile::find(cstr path, cstr _msk) {
+zArray<zFile::zFileInfo> zFile::find(czs& pth, czs& _msk) {
     zArray<zFileInfo> fl;
     static char fname[260];
     DIR* dir; struct dirent* ent; zFileInfo info{};
-    zString8 msk(_msk); auto am(msk.split("*"));
-    if((dir = opendir(path))) {
+    auto am(_msk.split("*"));
+    if((dir = opendir(pth))) {
         while((ent = readdir(dir))) {
             if((strncmp(ent->d_name, ".", PATH_MAX) == 0) || (strncmp(ent->d_name, "..", PATH_MAX) == 0)) continue;
             // поиск по маске
@@ -214,17 +213,15 @@ zArray<zFile::zFileInfo> zFile::find(cstr path, cstr _msk) {
                 res = false; break;
             }
             if(res) {
-                info.path = path; info.path += ent->d_name;
+                info.setPath(pth + ent->d_name);
                 struct stat st{};
                 if(!stat(info.path, &st)) {
                     info.atime = st.st_atime; info.mtime = st.st_mtime; info.ctime = st.st_ctime;
                     info.csize = st.st_size;  info.usize = st.st_size;
                     info.attr  = st.st_mode;  info.index = -1;
-                    info.zip   = info.path.endsWith(".zip");
                     if(info.attr & S_IFDIR) info.path.slash();
                     fl += info;
                 }
-                info.path.empty();
             }
         }
         closedir(dir);

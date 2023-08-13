@@ -2,6 +2,7 @@
 #pragma once
 
 #include <functional>
+#include <thread>
 
 template <typename T, bool> struct release_node { static void release(const T& t) { /*static_assert(false, "release_node invalid!");*/ } };
 template <typename T> struct release_node < T, false > { static void release(const T& t) { t.~T(); } static T dummy() { return T(); } };
@@ -102,6 +103,38 @@ public:
 			count -= _count;
 		}
 		return *this;
+	}
+	// сортировка
+	void sort(int start, int end, int index, bool _begin, const std::function<bool(int l, int r)>& func) {
+		static zArray<T> tmp; static std::thread* t(nullptr);
+		if(_begin) tmp.resize(count);
+		// Если в массиве только один элемент — он отсортирован.
+		if(start == end) return;
+		int midpoint((start + end) / 2);
+		// Вызываем _sort для сортировки двух половин.
+		if(index == 0 && midpoint > 500) {
+			t = new std::thread([&]() {
+				sort(start, midpoint, index + 1, false, func);
+				SAFE_DELETE(t);
+			});
+			t->detach();
+		} else {
+			sort(start, midpoint, index + 1, false, func);
+		}
+		sort(midpoint + 1, end, index + 1, false, func);
+		// ожидаем другую ветку
+		if(index == 0) { while(t) { } }
+		// Соединяем отсортированные половины.
+		int left_index(start), right_index(midpoint + 1), scratch_index(start);
+		while((left_index <= midpoint) && (right_index <= end)) {
+			auto move(func(left_index, right_index));
+			tmp[scratch_index++] = move ? at(left_index++) : at(right_index++);
+		}
+		// Завершаем копирование из непустой половины.
+		for(int i = left_index; i <= midpoint; i++) tmp[scratch_index++] = at(i);
+		for(int i = right_index; i <= end; i++) tmp[scratch_index++] = at(i);
+		// Копируем значения в исходный массив.
+		for(int i = start; i <= end; i++) at(i) = tmp[i];
 	}
 	// найти элемент
 	template<typename R> int indexOf(const R& r) const noexcept {

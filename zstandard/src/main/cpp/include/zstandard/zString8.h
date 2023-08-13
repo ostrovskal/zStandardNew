@@ -97,6 +97,8 @@ public:
     // поиск
     bool startsWith(cstr str) const { return indexOf(str) == 0; }
     bool endsWith(cstr str) const { return indexOfLast(str) == (count() - z_count8(str)); }
+    bool prefix(cstr str) const { return startsWith(str); }
+    bool suffix(cstr str) const { return endsWith(str); }
     template<typename R> int indexOf(R* str, int count) const {
         R v; i32 idx(-1);
         while(count-- > 0 && (v = str[++idx])) { if(*this == v) return idx; } return -1;

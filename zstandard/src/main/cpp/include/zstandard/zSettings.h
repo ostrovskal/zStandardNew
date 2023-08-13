@@ -21,24 +21,38 @@ public:
         // смещение
         int offs;
     };
+    // конструктор
     zSettings(cstr root, cstr* opts);
-	virtual ~zSettings() { }
     // инициализация
     void init(u8* ptr, cstr name);
     // сохранение установок
     void save(u8* ptr, cstr name);
-    // вернуть строку
-    cstr getPath(int idx) const { return (idx >= 0 && idx < paths.size()) ? paths[idx].str() : ""; }
-    // октрыть файл из MRU
-    cstr mruOpen(int index, cstr path, bool error);
-    // вернуть значение по умолчанию
-    cstr getDefault(cstr name) const { auto idx(defs.indexOf(name)); return (idx >= 0 && idx < defs.size() ? defs[idx].value.str() : nullptr); }
     // установить значение по умолчанию для опции
     void setDefault(u8* ptr, cstr opt);
+    // вернуть строку
+    zString8 getPath(int idx) const { return (idx >= 0 && idx < paths.size()) ? paths[idx] : ""; }
+    // октрыть/добавить файл из MRU
+    zString8 mruOpen(int index, czs& path, bool error);
+    // вернуть значение по умолчанию(по имени)
+    zString8 getDefault(cstr name) const;
+    // вернуть значение по умолчанию(по смещению)
+    template<typename T> bool getDefault(int offs, T* v) const {
+        for(auto& o : defs) {
+            if(o.offs == offs) {
+                int radix(RADIX_DEC);
+                if(o.type == ZOPTION::TOPTION::_bol) radix = RADIX_BOL;
+                else if(o.type == ZOPTION::TOPTION::_flt) radix = RADIX_FLT;
+                else if(o.type == ZOPTION::TOPTION::_hex) radix = RADIX_HEX;
+                if(v) *v = z_ston<T>(o.value, radix);
+                return true;
+            }
+        }
+        return false;
+    }
     // сформировать путь от папки проги
     zString8 makePath(cstr pth, int type) const;
     // вернуть декоративную MRU строку
-    zString8 mruDecorate(int index) const;
+    zString8 mruDecorate(int index) const { return mrus[index].substrAfterLast("/"); }
 protected:
     // установка опции
 	void setOption(u8* ptr, const ZOPTION& opt);

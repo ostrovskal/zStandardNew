@@ -81,8 +81,8 @@ zArray<zFile::zFileInfo> zCloudYandex::getFiles(czs& _path) {
 			auto o(js.getNode(i, lst));
 			fi.usize = js.getNode("size", o)->integer();
 			fi.attr  = js.getNode("type", o)->string() == "dir" ? S_IFDIR : S_IFREG;
-			fi.path  = js.getNode("path", o)->string().substrAfterLast("/");
-			fi.zip   = fi.path.endsWith(".zip"); fi.index = 0;
+			fi.setPath(js.getNode("path", o)->string());
+			fi.index = 0;
 			ret      += fi;
 		}
 		if(count < 40) break;

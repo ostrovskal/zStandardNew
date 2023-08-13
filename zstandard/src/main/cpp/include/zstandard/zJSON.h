@@ -16,6 +16,8 @@ public:
         double real() const { return z_ston<double>(val, RADIX_DBL); }
         // вернуть целое
         int integer() const { return z_ston<int>(val, RADIX_DEC); }
+        // вернуть время
+        u64 time() const { return z_ston<u64>(val, RADIX_DEC); }
         // вернуть булево
         bool boolean() const { return val == "true"; }
         // вернуть строку

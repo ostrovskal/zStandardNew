@@ -480,3 +480,5 @@ template<typename T> void z_logBuffer(const zString8& tips, const T& elem, int s
         count = 0;
     }
 }
+
+zString8 z_kilo(int val);
