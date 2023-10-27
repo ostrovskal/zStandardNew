@@ -137,7 +137,7 @@ public:
 	void empty() { w = h = 0; }
 	T interval() const { return (h - w) ; }
 	T clamp(const T& p) { return (p < w ? w : p > h ? h : p); }
-	bool isEmpty() const { return w < 1 || h < 1; }
+	bool isEmpty() const { return w < 1 && h < 1; }
 	bool isNotEmpty() const { return !isEmpty(); }
 	const T& operator [](int index) const { return buf[index]; }
 	T& operator [](int index) { return buf[index]; }
@@ -184,7 +184,7 @@ public:
 	zPoint<T> wh() const { return zPoint<T>(w, h); }
 	zSize<T> size() const { return zSize<T>(w, h); }
 	void empty() { x = y = w = h = 0; }
-	bool isEmpty() const { return w < 1 || h < 1; }
+	bool isEmpty() const { return w < 1 && h < 1; }
 	bool isNotEmpty() const { return !isEmpty(); }
 	bool contains(T _x, T _y) const { return _x >= x && _y >= y && _x <= (x + w) && _y <= (y + h); }
 	bool contains(const zPoint<T>& p) const { return contains(p.x, p.y); }

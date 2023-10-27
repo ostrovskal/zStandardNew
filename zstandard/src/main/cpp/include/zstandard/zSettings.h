@@ -29,8 +29,10 @@ public:
     void save(u8* ptr, cstr name);
     // установить значение по умолчанию для опции
     void setDefault(u8* ptr, cstr opt);
-    // вернуть строку
+    // вернуть путь по индексу
     zString8 getPath(int idx) const { return (idx >= 0 && idx < paths.size()) ? paths[idx] : ""; }
+    // установить путь по индексу
+    void setPath(int idx, czs& pth) const { if(idx >= 0 && idx < paths.size()) paths[idx] = pth; }
     // октрыть/добавить файл из MRU
     zString8 mruOpen(int index, czs& path, bool error);
     // вернуть значение по умолчанию(по имени)
@@ -52,7 +54,7 @@ public:
     // сформировать путь от папки проги
     zString8 makePath(cstr pth, int type) const;
     // вернуть декоративную MRU строку
-    zString8 mruDecorate(int index) const { return mrus[index].substrAfterLast("/"); }
+    zString8 mruDecorate(int index) const { auto s(mrus[index]); return s.substrAfterLast("/", s); }
 protected:
     // установка опции
 	void setOption(u8* ptr, const ZOPTION& opt);

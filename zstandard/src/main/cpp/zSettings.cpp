@@ -81,7 +81,7 @@ void zSettings::setOption(u8* ptr, const ZOPTION& opt) {
 }
 	
 zString8 zSettings::getOption(const u8* ptr, int idx) {
-    u32 n; int radix(RADIX_DEC); cstr ret;
+    u32 n; int radix(RADIX_DEC); zString8 ret;
     auto opt(defs[idx]); auto o(opt.offs);
     switch(opt.type) {
         case ZOPTION::TOPTION::_flt: {
@@ -105,7 +105,7 @@ zString8 zSettings::getOption(const u8* ptr, int idx) {
             ret = mrus[o];
             break;
         case ZOPTION::TOPTION::_pth:
-            ret = paths[o].substrAfter(pathRoot);
+            ret = paths[o]; ret = ret.substrAfter(pathRoot, ret);
             break;
         case ZOPTION::TOPTION::_unk:
         default: ret = ""; break;
