@@ -131,7 +131,7 @@ public:
     const zString& trim(const char* wcs) { trimLeft(wcs); return trimRight(wcs); }
     const zString& trimLeft(cstr wcs);
     const zString& trimRight(cstr wcs);
-    const zString& crop(i32 len) { if(length() > len) remove(0, len); return *this; }
+    const zString& crop(i32 len) { remove(len, length()); return *this; }
     zString substr(i32 idx, i32 len = -1) const;
     zString substrAfter(cstr str, cstr no = nullptr) const { return _after(str, z_strlen(str), no, false); }
     zString substrAfter(char ch, cstr no = nullptr) const { auto s(str()), f(strchr(s, ch)); return zString(f ? f + 1 : no, f ? (int)((s + length()) - f) : -1); }
@@ -151,6 +151,10 @@ public:
     bool startsWith(char ch) const { return str()[0] == ch; }
     bool endsWith(cstr wcs) const { return indexOfLast(wcs) == (length() - z_strlen(wcs)); }
     bool endsWith(char ch) const { return str()[length() - 1] == ch; }
+    template<typename R> int indexOf(R* str, int count) const {
+        R v; i32 idx(-1);
+        while(count-- > 0 && (v = str[++idx])) { if(*this == v) return idx; } return -1;
+    }
     int indexOf(cstr wcs[]) const;
     int indexOf(cstr wcs, int idx = 0) const { return _indexOf(wcs, idx, z_strlen(wcs)); }
     int indexOf(char ws, int idx = 0) const { return _indexOf((cstr)&ws, idx, 1); }

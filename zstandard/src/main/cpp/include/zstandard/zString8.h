@@ -83,7 +83,7 @@ public:
     const zString8& trim(cstr str) { trimLeft(str); return trimRight(str); }
     const zString8& trimLeft(cstr str);
     const zString8& trimRight(cstr str);
-    const zString8& crop(i32 _count) { remove(0, _count); return *this; }
+    const zString8& crop(i32 _count) { remove(_count, count()); return *this; }
     const zString8& translate(cstr space);
     zString8 substr(i32 idx, i32 _count = INT_MAX) const;
     zString8 substrAfter(cstr str, cstr no = nullptr) const { return _after(str, z_count8(str), no, false); }
@@ -103,6 +103,7 @@ public:
         R v; i32 idx(-1);
         while(count-- > 0 && (v = str[++idx])) { if(*this == v) return idx; } return -1;
     }
+    template<typename T = int> T toNum(int r = RADIX_DEC, char** end = nullptr) const { return z_ston<T>(str(), r, end); }
     int indexOf(cstr str, i32 idx = 0) const { return _indexOf(str, idx); }
     int indexOfLast(cstr str, i32 idx = 0) const { return _indexOfLast(str, idx, z_count8(str)); }
     cstr str() const { return (_str_buffer.size_buf > Z_BUFFER_LENGTH ? _str_buffer.ptr : _str_buffer.str); }

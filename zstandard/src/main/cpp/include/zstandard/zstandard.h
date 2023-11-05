@@ -272,7 +272,7 @@ inline void wordBE(u8** buf, u16 val) {
 
 inline u32 dwordLE(u8** ptr) {
     auto p(*ptr); (*ptr) += 4;
-    return (*(u16*)(p) | (*(u16*)(p + 2) << 16));
+    return (p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24));
 }
 
 inline void dwordLE(u8** buf, u32 val) {
@@ -294,32 +294,30 @@ inline void dwordBE(u8** buf, u32 val) {
 
 inline u64 qwordLE(u8** ptr) {
     auto p(*ptr); (*ptr) += 8;
-    u64 _1 = *(u16*)(p + 0) | (*(u16*)(p + 2) << 16);
-    u64 _2 = *(u16*)(p + 4) | (*(u16*)(p + 6) << 16);
-    return (_1 | (_2 << 32L));
+    u64 ret(0); auto d((u8*)&ret);
+    d[0] = p[0]; d[1] = p[1]; d[2] = p[2]; d[3] = p[3];
+    d[4] = p[4]; d[5] = p[5]; d[6] = p[6]; d[7] = p[7];
+    return ret;
 }
 
 inline void qwordLE(u8** buf, u64 val) {
-    auto ptr(*buf); (*buf) += 8;
-    *(u16*)(ptr + 0) = (u16)((val >> 0)  & 0xFFFF);
-    *(u16*)(ptr + 2) = (u16)((val >> 16) & 0xFFFF);
-    *(u16*)(ptr + 4) = (u16)((val >> 32) & 0xFFFF);
-    *(u16*)(ptr + 6) = (u16)((val >> 48) & 0xFFFF);
+    auto p(*buf); (*buf) += 8; auto d((u8*)&val);
+    p[0] = d[0]; p[1] = d[1]; p[2] = d[2]; p[3] = d[3];
+    p[4] = d[4]; p[5] = d[5]; p[6] = d[6]; p[7] = d[7];
 }
 
 inline u64 qwordBE(u8** ptr) {
     auto p(*ptr); (*ptr) += 8;
-    u64 _1 = (p[3] | (p[2] << 8) | (p[1] << 16) | (p[0] << 24));
-    u64 _2 = (p[7] | (p[6] << 8) | (p[5] << 16) | (p[4] << 24));
-    return (_2 | (_1 << 32L));
+    u64 ret(0); auto d((u8*)&ret);
+    d[0] = p[7]; d[1] = p[6]; d[2] = p[5]; d[3] = p[4];
+    d[4] = p[3]; d[5] = p[2]; d[6] = p[1]; d[7] = p[0];
+    return ret;
 }
 
 inline void qwordBE(u8** buf, u64 val) {
-    auto ptr(*buf); (*buf) += 8;
-    *(u16*)(ptr + 0) = (u16)((val >> 48) & 0xFFFF);
-    *(u16*)(ptr + 2) = (u16)((val >> 32) & 0xFFFF);
-    *(u16*)(ptr + 4) = (u16)((val >> 16) & 0xFFFF);
-    *(u16*)(ptr + 6) = (u16)((val >> 0)  & 0xFFFF);
+    auto p(*buf); (*buf) += 8; auto d((u8*)&val);
+    p[0] = d[7]; p[1] = d[6]; p[2] = d[5]; p[3] = d[4];
+    p[4] = d[3]; p[5] = d[2]; p[6] = d[1]; p[7] = d[0];
 }
 
 // из строки в hex

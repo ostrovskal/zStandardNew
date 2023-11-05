@@ -20,16 +20,12 @@ bool zFile::open(czs& pth, bool read, bool zipped, bool append) {
             hz = (read ? unzOpen(pth) : zipOpen(pth, APPEND_STATUS_CREATE));
         }
         if(!hz) {
-#ifdef WIN32
-            u32 access(read ? O_RDWR : O_WRONLY);
-            u32 mode(read ? S_IREAD : S_IWRITE);
-            access |= O_BINARY;
-#else
             i32 access(read ? O_RDWR : O_WRONLY);
-            u32 mode(S_IWRITE | S_IREAD);
+#ifdef WIN32
+            access |= O_BINARY;
 #endif
             if(!read) { if(!append) access |= O_CREAT | O_TRUNC; else access |= O_APPEND; }
-            hf = openf(pth, access, mode);
+            hf = openf(pth, access, ALLPERMS);
         }
     }
     bool ret(hf > 0 || hz != nullptr);
@@ -111,7 +107,7 @@ zString zFile::readString(int pos, int mode) const {
 
 zArray<zString8> zFile::strings() const {
     zArray<zString8> arr; zString8 str;
-    while((str = readString()).isNotEmpty()) arr += str;
+    while((str = readString8()).isNotEmpty()) arr += str;
     return arr;
 }
 
