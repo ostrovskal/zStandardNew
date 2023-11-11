@@ -30,7 +30,7 @@ public:
     // установить значение по умолчанию для опции
     void setDefault(u8* ptr, cstr opt);
     // вернуть путь по индексу
-    zString8 getPath(int idx) const { return (idx >= 0 && idx < paths.size()) ? paths[idx] : ""; }
+    zString8 getPath(int idx) const { return (idx >= 0 && idx < paths.size()) ? paths[idx] : zString8(); }
     // установить путь по индексу
     void setPath(int idx, czs& pth) const { if(idx >= 0 && idx < paths.size()) paths[idx] = pth; }
     // октрыть/добавить файл из MRU

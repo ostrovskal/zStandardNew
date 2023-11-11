@@ -4,34 +4,33 @@
 
 #pragma once
 
-#include <filesystem>
+#ifndef DEFFILEMODE
+    #define DEFFILEMODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) /* 0666 */
+#endif
 
 class zFile {
 public:
     struct zFileInfo {
-        void setPath(zString8 p) {
-            path = p;
-            zip = p.right(4).compare(".zip");
-        }
+        void setPath(zString8 p) { path = p; zip = p.right(4).compare(".zip"); }
         // признак архива
-        bool zip;
+        bool zip{false};
         // индекс элемента
-        int index;
+        int index{0};
         // имя
-        zString8 path;
+        zString8 path{};
         // атрибуты
-        u32 attr;
+        u32 attr{0};
         // время
-        time_t atime, ctime, mtime;
+        time_t atime{0}, ctime{0}, mtime{0};
         // размер(compress/uncompress)
-        long long csize, usize;
+        long long csize{0LL}, usize{0LL};
     };
     // конструктор по умолчанию
     zFile() { }
     // конструктор по значению
-    zFile(czs& pth, bool read, bool zipped = true, bool append = false) { _open(pth, read, zipped, append); }
+    zFile(czs& pth, bool read, bool zipped = true, bool append = false) { intOpen(pth, read, zipped, append); }
     // деструктор
-    virtual ~zFile() { _close(); }
+    virtual ~zFile() { intClose(); }
     // открыть/создать файл
     virtual bool open(czs& pth, bool read, bool zipped = true, bool append = false);
     // закрыть
@@ -70,15 +69,18 @@ public:
     // найти
     static zArray<zFileInfo> find(czs& pth, czs& _msk);
     // проверка на существование файла/папки
-    static bool isFile(cstr pth) { return std::filesystem::exists(pth); }
-    static bool isFolder(cstr pth) { return std::filesystem::is_directory(pth); }
+    static bool isFile(czs& pth) { struct stat sb{}; return (stat(pth, &sb) ? 0 : (sb.st_mode & S_IFREG) != 0); }
+    static bool isDir(czs& pth) { struct stat sb{}; return (stat(pth, &sb) ? 0 : (sb.st_mode & S_IFDIR) != 0); }
+    static bool isExist(czs& pth) { struct stat sb{}; return (stat(pth, &sb) != 0); }
+    // создание папки
+    static bool makeDir(czs& pth) { return ::mkdir(pth, DEFFILEMODE) != 0; }
     // переименование/перемещение
-    static bool	move(cstr _old, cstr _new) { return rename(_old, _new) == 0; }
+    static bool	move(czs& _old, czs& _new) { return rename(_old, _new) == 0; }
     // удаление
-    static bool remove(cstr pth) { return unlinkf(pth) == 0; }
+    static bool remove(czs& pth) { return unlinkf(pth) == 0; }
 protected:
-    bool    _open(czs& pth, bool read, bool zipped, bool append) { return open(pth, read, zipped, append); }
-    void    _close() { close(); }
+    bool    intOpen(czs& pth, bool read, bool zipped, bool append) { return open(pth, read, zipped, append); }
+    void    intClose() { close(); }
     int		hf{0};
     HZIP* 	hz{nullptr};
     zString8 path{};

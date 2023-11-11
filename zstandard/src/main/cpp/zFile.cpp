@@ -25,7 +25,7 @@ bool zFile::open(czs& pth, bool read, bool zipped, bool append) {
             access |= O_BINARY;
 #endif
             if(!read) { if(!append) access |= O_CREAT | O_TRUNC; else access |= O_APPEND; }
-            hf = openf(pth, access, ALLPERMS);
+            hf = openf(pth, access, DEFFILEMODE);
         }
     }
     bool ret(hf > 0 || hz != nullptr);
@@ -41,12 +41,12 @@ bool zFile::copy(czs& pth, int index) {
         zFile f;
         if(f.open(pth, false, false)) {
             int bsz(256 * 1024), sz(0);
-            auto ptr(new u8[bsz]);
-            while(read(&sz, ptr, bsz)) {
-                if(sz) { f.write(ptr, sz); ret = true; }
-                if(sz != bsz) break;
+            auto tmp(std::unique_ptr<u8>(new u8[bsz]));
+            while(true) {
+                read(&sz, tmp.get(), bsz);
+                if(sz) ret = f.write(tmp.get(), sz);
+                if(!ret || sz != bsz) break;
             }
-            delete[] ptr;
         }
         f.close();
     }
@@ -58,8 +58,9 @@ void* zFile::read(int* psize, void* ptr, int size, int pos, int mode) const {
     if(hz) {
         ret = (unzUnzipToMem(hz->unz, pos, (u8**)&ptr, (u32*)&size) == ZIP_OK);
     } else if(hf > 0) {
-        if(pos != -1) seek(pos, mode);
-        ret = readf(hf, ptr, size) == (int)size;
+        seek(pos, mode); if(!size) size = length();
+        ret = ((pos = readf(hf, ptr, size)) == size);
+        size = pos;
     }
     if(psize) *psize = size;
     return (ret ? ptr : nullptr);
@@ -70,10 +71,8 @@ void* zFile::readn(int* psize, int size, int pos, int mode) const {
     if(hz) {
         ret = (unzUnzipToMem(hz->unz, pos, &ptr, (u32*)&size) == ZIP_OK);
     } else if(hf > 0) {
-        if(pos != -1) seek(pos, mode);
-        if(!size) size = length();
-        ptr = new u8[size + 1]; ptr[size] = 0;
-        ret = readf(hf, ptr, size) == (int)size;
+        if(!size) size = length(); ptr = new u8[size + 1]; ptr[size] = 0;
+        ret = read(psize, ptr, size, pos, mode) != nullptr;
     }
     if(!ret) {
         SAFE_A_DELETE(ptr);
@@ -89,12 +88,10 @@ zString8 zFile::readString8(int pos, int mode) const {
 
 zString zFile::readString(int pos, int mode) const {
     static char stmp[257];
-    zString tmp;
-    seek(pos, mode);
-    tmp.empty();
+    zString tmp; seek(pos, mode);
     if(hf > 0) {
         char ch; int idx(0);
-        while(readf(hf, &ch, 1) == 1) {
+        while(read(nullptr, &ch, 1)) {
             if(ch == '\r') continue;
             if(ch == '\n') break;
             stmp[idx++] = ch;
@@ -190,19 +187,15 @@ int zFile::length() const {
 }
 
 zArray<zFile::zFileInfo> zFile::find(czs& pth, czs& _msk) {
-    zArray<zFileInfo> fl;
     static char fname[260];
-    DIR* dir; struct dirent* ent; zFileInfo info{};
-    auto am(_msk.split("*"));
-    if((dir = opendir(pth))) {
-        while((ent = readdir(dir))) {
+    zArray<zFileInfo> fl; zFileInfo info{}; auto am(_msk.split("*"));
+    if(auto dir = opendir(pth)) {
+        while(auto ent = readdir(dir)) {
             if((strncmp(ent->d_name, ".", PATH_MAX) == 0) || (strncmp(ent->d_name, "..", PATH_MAX) == 0)) continue;
             // поиск по маске
-            bool res(true); auto _s(fname);
-            strcpy(fname, ent->d_name);
-            for(int i = 0; i < am.size(); i++) {
-                auto m(am[i]);
-                if(m.isEmpty()) continue;
+            bool res(true); auto _s(fname); strcpy(_s, ent->d_name);
+            for(auto i = 0; i < am.size(); i++) {
+                auto m(am[i]); if(m.isEmpty()) continue;
                 auto _m(_s ? strstr(_s, m.str()) : _s);
                 if(i == 0 && _m == fname) { _s = _m + 1; continue; }
                 if(i > 0 && _m) { _s = _m + 1; continue; }

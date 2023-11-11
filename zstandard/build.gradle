@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace 'ru.ostrov.zstandard'
-    ndkVersion '26.0.10792818'
+    ndkVersion '25.2.9519653'
     compileSdk 33
 
     defaultConfig {
@@ -23,7 +23,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             debuggable false
             jniDebuggable false
             renderscriptDebuggable false
