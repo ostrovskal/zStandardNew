@@ -72,8 +72,7 @@ void zSHA1::update(u8 *data, u32 len) {
 		transform(m_state, m_buffer);
 		for(; i + 63 < len; i += 64) transform(m_state, &data[i]);
 		j = 0;
-	}
-	else i = 0;
+	} else i = 0;
 	memcpy(&m_buffer[j], &data[i], len - i);
 }
 

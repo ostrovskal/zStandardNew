@@ -4,11 +4,11 @@
 #include <functional>
 #include <thread>
 
-template <typename T, bool> struct release_node { static void release(const T& t) { /*static_assert(false, "release_node invalid!");*/ } };
+template <typename T, bool> struct release_node { static void release(const T&) { /*static_assert(false, "release_node invalid!");*/ } };
 template <typename T> struct release_node < T, false > { static void release(const T& t) { t.~T(); } static T dummy() { return T(); } };
 template <typename T> struct release_node < T, true > { static void release(const T& t) { delete t; } static T dummy() { return nullptr; } };
 
-template <typename T, typename R, bool> struct get_node { static bool compare(const T& t, const R& r) { } };
+template <typename T, typename R, bool> struct get_node { static bool compare(const T&, const R&) { } };
 template <typename T, typename R> struct get_node < T, R, false > { static bool compare(const T& t, const R& r) { return t == r; } };
 template <typename T, typename R> struct get_node < T, R, true > { static bool compare(const T& t, const R& r) { return *t == r; } };
 
@@ -55,7 +55,7 @@ public:
 	// добавить элемент
 	T& operator += (const T& elem) noexcept { return insert(count, elem); }
 	// добавить массив
-	const zArray& operator += (const zArray<T>& src) noexcept { return insert(count, src.data(), src.size()); }
+	const zArray& operator += (const zArray<T>& src) noexcept { return insert(count, src.get_data(), src.size()); }
 	// заместить массив
 	const zArray& operator = (const zArray<T>& src) noexcept { clear(); return insert(0, src.get_data(), src.size()); }
 	// оператор индекса
